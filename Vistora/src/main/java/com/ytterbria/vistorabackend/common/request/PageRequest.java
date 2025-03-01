@@ -2,9 +2,12 @@ package com.ytterbria.vistorabackend.common.request;
 
 import lombok.Data;
 
-@Data
-public class PageRequest {
+import java.io.Serializable;
 
+@Data
+public class PageRequest implements Serializable {
+
+    private static final long serialVersionUID = -1946456669650080085L;
     /**
      * 当前页号
      */

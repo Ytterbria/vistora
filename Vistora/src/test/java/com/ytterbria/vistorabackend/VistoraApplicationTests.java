@@ -8,6 +8,7 @@ class VistoraApplicationTests {
 
     @Test
     void contextLoads() {
+
     }
 
 }

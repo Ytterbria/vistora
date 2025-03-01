@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @SpringBootApplication
-@MapperScan("com.ytterbria.vistorabackend")
+@MapperScan("com.ytterbria.vistorabackend.mapper")
 @EnableAspectJAutoProxy(exposeProxy = true)
 public class VistoraApplication {
     public static void main(String[] args) {

@@ -1,4 +1,4 @@
-package com.ytterbria.vistorabackend.model.dto;
+package com.ytterbria.vistorabackend.model.dto.user;
 
 import lombok.Data;
 

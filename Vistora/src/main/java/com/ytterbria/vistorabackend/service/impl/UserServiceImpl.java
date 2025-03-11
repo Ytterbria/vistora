@@ -1,16 +1,20 @@
 package com.ytterbria.vistorabackend.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
+import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
+import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.enums.UserRoleEnum;
-import com.ytterbria.vistorabackend.model.dto.user.UserLoginRequest;
-import com.ytterbria.vistorabackend.model.dto.user.UserRegisterRequest;
+import com.ytterbria.vistorabackend.model.dto.user.*;
 import com.ytterbria.vistorabackend.model.vo.LoginUserVO;
+import com.ytterbria.vistorabackend.model.vo.UserManageVO;
 import generator.domain.User;
 import com.ytterbria.vistorabackend.service.UserService;
 import com.ytterbria.vistorabackend.mapper.UserMapper;
@@ -19,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author lenovo
@@ -123,6 +130,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    public UserManageVO getUserManageVO(User user) {
+        if (user == null){
+            return null;
+        }
+        UserManageVO userManageVO = new UserManageVO();
+        BeanUtils.copyProperties(user,userManageVO);
+        return userManageVO;
+
+
+
+
+    }
+
+    @Override
+    public QueryWrapper<User> getQueryWrapper(UserQueryRequest request) {
+        if (request == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空");
+        }
+        Long id = request.getId();
+        String userAccount = request.getUserAccount();
+        String userRole = request.getUserRole();
+        String userName = request.getUserName();
+        String userProfile = request.getUserProfile();
+        String sortField = request.getSortField();
+        String sortOrder = request.getSortOrder();
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        return queryWrapper
+                .eq(ObjUtil.isNotNull(id),"id",id)
+                .eq(StrUtil.isNotBlank(userRole),"userRole",userRole)
+                .like(StrUtil.isNotBlank(userAccount),"userAccount",userAccount)
+                .like(StrUtil.isNotBlank(userName),"userName",userName)
+                .like(StrUtil.isNotBlank(userProfile),"userProfile",userProfile)
+                .orderBy(StrUtil.isNotEmpty(sortField),sortOrder.equals("ascend"),sortField);
+    }
+
+    @Override
     public User getLoginUserInfo(HttpServletRequest httpServletRequest) {
         Object userOBJ = httpServletRequest.getSession().getAttribute(UserConstant.USER_LOGIN_STATUS);
 
@@ -144,6 +187,84 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR,"用户未登录");
         }
         httpServletRequest.getSession().removeAttribute(UserConstant.USER_LOGIN_STATUS);
+        return true;
+    }
+
+    @Override
+    public Long addUser(UserAddRequest request) {
+        ThrowUtils.throwIf(request == null,ErrorCode.PARAMS_ERROR);
+
+        User user = new User();
+        BeanUtils.copyProperties(request,user);
+        final String defaultPassword = UserConstant.DEFAULT_PASSWORD;
+        String encryptedPassword = this.getEncryptPassword(defaultPassword);
+        user.setUserPassword(encryptedPassword);
+        boolean result = this.save(user);
+        ThrowUtils.throwIf(!result,ErrorCode.SYSTEM_ERROR);
+        return user.getId();
+    }
+
+    @Override
+    public UserManageVO getUserManageVOById(Long userId) {
+        ThrowUtils.throwIf(userId <= 0 , ErrorCode.PARAMS_ERROR);
+        User user = this.getById(userId);
+        ThrowUtils.throwIf(user == null,ErrorCode.NOT_FOUND_ERROR);
+        return this.getUserManageVO(user);
+
+    }
+
+    @Override
+    public User getUserById(Long userId) {
+        ThrowUtils.throwIf(userId <= 0 , ErrorCode.PARAMS_ERROR);
+        User user = this.getById(userId);
+        ThrowUtils.throwIf(user == null,ErrorCode.NOT_FOUND_ERROR);
+        return user;
+    }
+
+    @Override
+    public boolean deleteUser(DeleteRequest request) {
+        if (request == null || request.getId() <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        return this.removeById(request.getId());
+    }
+
+    @Override
+    public List<UserManageVO> getUserManageVOList(List<User> userList) {
+        if (CollectionUtil.isEmpty(userList)){
+            return new ArrayList<>();
+        }
+        List<UserManageVO> userManageVOList = new ArrayList<>();
+        return userList
+                .stream()
+                .map(this :: getUserManageVO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<UserManageVO> listUserVO(UserQueryRequest request) {
+        ThrowUtils.throwIf(request == null,ErrorCode.PARAMS_ERROR);
+        long current = request.getCurrent();
+        long pageSize = request.getPageSize();
+        Page<User> userPage = this.page(
+                new Page<>(current,pageSize),
+                this.getQueryWrapper(request)
+                );
+        Page<UserManageVO> userManageVOPage = new Page<>(current,pageSize,userPage.getTotal());
+        List<UserManageVO> userManageVOList = this.getUserManageVOList(userPage.getRecords());
+        userManageVOPage.setRecords(userManageVOList);
+        return userManageVOPage;
+    }
+
+    @Override
+    public boolean updateUser(UserUpdateRequest request) {
+        if (request == null || request.getId() == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = new User();
+        BeanUtils.copyProperties(request,user);
+        boolean result = this.updateById(user);
+        ThrowUtils.throwIf(!result,ErrorCode.SYSTEM_ERROR);
         return true;
     }
 }

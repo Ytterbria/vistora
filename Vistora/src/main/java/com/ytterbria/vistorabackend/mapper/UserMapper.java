@@ -1,7 +1,7 @@
 package com.ytterbria.vistorabackend.mapper;
 
-import generator.domain.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ytterbria.vistorabackend.model.entity.User;
 
 /**
 * @author lenovo

@@ -11,4 +11,8 @@ class VistoraApplicationTests {
 
     }
 
+    @Test
+    void test(){
+
+    }
 }

@@ -2,18 +2,26 @@ package com.ytterbria.vistorabackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.model.dto.user.*;
+import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.LoginUserVO;
 import com.ytterbria.vistorabackend.model.vo.UserManageVO;
-import generator.domain.User;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 
 public interface UserService extends IService<User> {
+        /**
+         * 判断是否为管理员
+         *
+         * @param user 用户实体
+         * @return 是否为管理员
+         */
+        boolean isAdmin(User user);
+
         /**
          * 用户注册
          * @param  request 自定义的用户注册请求体

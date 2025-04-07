@@ -9,10 +9,10 @@ import com.ytterbria.vistorabackend.common.response.BaseResponse;
 import com.ytterbria.vistorabackend.common.response.ResultUtils;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.model.dto.user.*;
+import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.LoginUserVO;
 import com.ytterbria.vistorabackend.model.vo.UserManageVO;
 import com.ytterbria.vistorabackend.service.UserService;
-import generator.domain.User;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

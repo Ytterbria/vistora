@@ -13,9 +13,9 @@ import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.enums.UserRoleEnum;
 import com.ytterbria.vistorabackend.model.dto.user.*;
+import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.LoginUserVO;
 import com.ytterbria.vistorabackend.model.vo.UserManageVO;
-import generator.domain.User;
 import com.ytterbria.vistorabackend.service.UserService;
 import com.ytterbria.vistorabackend.mapper.UserMapper;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +35,11 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
+
+    @Override
+    public boolean isAdmin(User user) {
+        return user!= null && user.getUserRole().equals(UserRoleEnum.ADMIN.getValue());
+    }
 
     @Override
     public long userRegister(UserRegisterRequest request) {

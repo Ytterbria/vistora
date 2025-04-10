@@ -57,6 +57,11 @@ const items = ref<MenuProps['items']>([
     title: '主页',
   },
   {
+    key: '/add_picture',
+    label: '创建图片',
+    title: '创建图片',
+  },
+  {
     key: '/about',
     label: '关于',
     title: '关于',

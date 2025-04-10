@@ -19,7 +19,7 @@
             name="userAccount"
             :rules="[
               { required: true, message: '请输入用户账号' },
-              { min: 8, message: '账号至少4个字符' },
+              { min: 4, message: '账号至少4个字符' },
               { max: 20, message: '账号最多20个字符' },
             ]"
           >

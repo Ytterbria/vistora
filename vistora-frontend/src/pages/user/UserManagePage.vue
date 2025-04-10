@@ -128,8 +128,8 @@
 </template>
 
 <script lang="ts" setup>
-import { SmileOutlined, PlusOutlined } from '@ant-design/icons-vue'
-import { onMounted, reactive, ref } from 'vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   listUserVoUsingPost,
@@ -188,15 +188,18 @@ const total = ref(0)
 // 查询参数,搜索条件
 const searchParams = reactive<API.UserQueryRequest>({
   current: 1,
-  pageSize: 10,
+  pageSize: 5,
 })
 
-const pagination = ref({
-  current: searchParams.current,
-  pageSize: searchParams.pageSize,
-  total: total.value,
-  showSizeChanger: true,
-  showQuickJumper: true,
+// 分页参数
+const pagination = computed(() => {
+  return {
+    current: searchParams.current ?? 1,
+    pageSize: searchParams.pageSize ?? 5,
+    total: total.value,
+    showSizeChanger: true,
+    showTotal: (total) => `共 ${total} 条`,
+  }
 })
 
 const fetchData = async () => {
@@ -212,9 +215,9 @@ const fetchData = async () => {
   }
 }
 
-const handleTableChange = (pagination: any) => {
-  searchParams.current = pagination.current
-  searchParams.pageSize = pagination.pageSize
+const handleTableChange = (page: any) => {
+  searchParams.current = page.current
+  searchParams.pageSize = page.pageSize
   fetchData()
 }
 

@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import PictureUpload from '@/components/PictureUpload.vue'
 import { onMounted, reactive, ref } from 'vue'
-import { editPictureUsingPost, listPictureTagCategoryUsingGet } from '@/api/pictureController.ts'
+import {
+  editPictureUsingPost,
+  getPictureVoByIdUsingGet,
+  listPictureTagCategoryUsingGet,
+} from '@/api/pictureController.ts'
 import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const picture = ref<API.PictureVO>()
 const pictureForm = reactive<API.PictureEditRequest>({})
 const categoryOptions = ref<string[]>([])
 const tagOptions = ref<string[]>([])
 const router = useRouter()
+const route = useRoute() //router用于跳转,route获取历史页面
 
 const onSuccess = (newPicture: API.PictureVO) => {
   picture.value = newPicture
@@ -58,13 +63,32 @@ const handleSubmit = async (values: API.PictureEditRequest) => {
   }
 }
 
+const getOldPicture = async () => {
+  const id = route.query?.id
+  if (id) {
+    const res = await getPictureVoByIdUsingGet({
+      id,
+    })
+    if (res.data.code === 0 && res.data.data) {
+      const data = res.data.data
+      picture.value = data
+      pictureForm.name = data.name
+      pictureForm.introduction = data.introduction
+      pictureForm.category = data.category
+      pictureForm.tags = data.tags
+    }
+  }
+}
+
 onMounted(() => {
   getTagCategory()
+  getOldPicture()
 })
 </script>
 
 <template>
   <div id="add-picture-page">
+    <h2 style="margin-bottom: 20px">{{ route.query?.id ? '编辑图片' : '创建图片' }}</h2>
     <!--上传图片组件-->
     <PictureUpload :picture="picture" :onSuccess="onSuccess" />
     <!--图片展示表单-->

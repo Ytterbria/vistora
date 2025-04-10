@@ -62,9 +62,14 @@ const items = ref<MenuProps['items']>([
     title: '创建图片',
   },
   {
-    key: '/about',
-    label: '关于',
-    title: '关于',
+    key: '/admin/pictureManage',
+    label: '图片管理',
+    title: '图片管理',
+  },
+  {
+    key: '/user/admin',
+    label: '用户管理',
+    title: '用户管理',
   },
   {
     key: 'others',

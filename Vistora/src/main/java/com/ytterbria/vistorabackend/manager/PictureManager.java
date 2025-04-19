@@ -4,11 +4,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
-import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
-import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
@@ -20,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -30,12 +26,10 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@Deprecated // 这个类已经废弃,使用PictureTemplate相关类代替
 public class PictureManager {
     @Resource
     private CosClientConfig cosClientConfig;
-
-    @Resource
-    private COSClient cosClient;
 
     @Resource
     private CosManager cosManager;
@@ -79,7 +73,7 @@ public class PictureManager {
 
     /**
      * 校验文件
-     * @param: multipartFile
+     * @param multipartFile 文件
      */
     public void validPicture(MultipartFile multipartFile){
         //校验是否为空

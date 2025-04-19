@@ -2,8 +2,7 @@ package com.ytterbria.vistorabackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ytterbria.vistorabackend.model.dto.picture.PictureQueryRequest;
-import com.ytterbria.vistorabackend.model.dto.picture.PictureUploadRequest;
+import com.ytterbria.vistorabackend.model.dto.picture.*;
 import com.ytterbria.vistorabackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ytterbria.vistorabackend.model.entity.User;
@@ -21,12 +20,13 @@ public interface PictureService extends IService<Picture> {
 
     /**
     * @description 上传图片
-    * @param multipartFile 图片文件
+    * @param inputSource 图片输入源
     * @param pictureUploadRequest 图片上传请求
     * @param loginUser 登录用户
     * @return PictureVO 封装的图片信息
     */
-    PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
+
 
     /**
      * @description 构造图片QueryWrapper
@@ -48,5 +48,13 @@ public interface PictureService extends IService<Picture> {
      */
     Page<PictureVO> getPictureVOPage(Page<Picture> picturePage,HttpServletRequest request);
 
+    boolean editPicture(PictureEditRequest pictureEditRequest,HttpServletRequest request);
+
+    boolean updatePicture(PictureUpdateRequest pictureUpdateRequest,HttpServletRequest request);
+
     void validatePicture(Picture picture);
+
+    void reviewPicture(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    void fillReviewParams(Picture picture,User loginUser);
 }

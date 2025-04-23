@@ -17,6 +17,7 @@ import com.ytterbria.vistorabackend.model.vo.PictureTagCategory;
 import com.ytterbria.vistorabackend.model.vo.PictureVO;
 import com.ytterbria.vistorabackend.service.PictureService;
 import com.ytterbria.vistorabackend.service.UserService;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -62,6 +63,14 @@ public class PictureController {
          String fileUrl = pictureUploadRequest.getFileUrl();
          PictureVO pictureVO = pictureService.uploadPicture(fileUrl,pictureUploadRequest,loginUser);
          return ResultUtils.success(pictureVO);
+    }
+
+    @PostMapping("/upload/batch")
+    public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,HttpServletRequest httpServletRequest){
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchRequest), ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUserInfo(httpServletRequest);
+        Integer uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest,loginUser);
+        return ResultUtils.success(uploadCount);
     }
 
     /**

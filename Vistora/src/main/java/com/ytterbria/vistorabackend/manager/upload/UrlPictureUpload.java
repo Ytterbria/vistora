@@ -9,7 +9,6 @@ import cn.hutool.http.Method;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
-import com.ytterbria.vistorabackend.constant.PictureConstant;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -46,7 +45,8 @@ public class UrlPictureUpload extends PictureUploadTemplate{
             String contentType = response.header("Content-Type");
             if (StrUtil.isNotBlank(contentType)) {
                 // 允许的图片类型
-                ThrowUtils.throwIf(!PictureConstant.ALLOWED_FORMAT_LIST.contains("image/" +contentType.toLowerCase()),
+                List<String> allowedTpyes = Arrays.asList("image/jpeg","image/png","image/gif","image/webp");
+                ThrowUtils.throwIf(!allowedTpyes.contains(contentType),
                         ErrorCode.PARAMS_ERROR, "文件类型错误");
             }
             // 5. 校验文件大小
@@ -55,7 +55,7 @@ public class UrlPictureUpload extends PictureUploadTemplate{
                 try {
                     long contentLength = Long.parseLong(contentLengthStr);
                     final long ONE_MB =   1024 * 1024L; // 限制文件大小为 10MB
-                    ThrowUtils.throwIf(contentLength >10 * ONE_MB, ErrorCode.PARAMS_ERROR, "文件大小不能超过 10M");
+                    ThrowUtils.throwIf(contentLength >100 * ONE_MB, ErrorCode.PARAMS_ERROR, "文件大小不能超过 10M");
                 } catch (NumberFormatException e) {
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小格式错误");
                 }
@@ -67,7 +67,7 @@ public class UrlPictureUpload extends PictureUploadTemplate{
     @Override
     protected String getOriginFilename(Object inputSource) {
         String file = (String) inputSource;
-        return FileUtil.mainName(file);
+        return FileUtil.getName(file);
     }
 
     @Override

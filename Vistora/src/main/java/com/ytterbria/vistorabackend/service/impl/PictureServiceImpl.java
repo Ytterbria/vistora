@@ -3,6 +3,9 @@ package com.ytterbria.vistorabackend.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -23,16 +26,14 @@ import com.ytterbria.vistorabackend.model.vo.PictureVO;
 import com.ytterbria.vistorabackend.service.PictureService;
 import com.ytterbria.vistorabackend.mapper.PictureMapper;
 import com.ytterbria.vistorabackend.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 * @createDate 2025-03-27 15:53:50
 */
 @Service
+@Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService {
 
@@ -59,7 +61,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     /**
      * 上传图片 ,根据用户id划分目录,上传到cos的路径格式为: public/userId/上传时间_uuid.后缀
      *
-     * @param inputSource          图片输入源
+     * @param inputSource          图片输入源 可以直接输入url或者传入图片文件
      * @param pictureUploadRequest 图片上传请求DTO
      * @param loginUser            登录用户
      * @return 上传结果DTO
@@ -100,6 +102,45 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return PictureVO.objToVo(picture);
     }
 
+    @Override
+    public Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser) {
+        int uploadCount = 0;
+        //参数校验
+        String searchText = pictureUploadByBatchRequest.getSearchText();
+        Integer count = pictureUploadByBatchRequest.getCount();
+        ThrowUtils.throwIf(count > 30,ErrorCode.PARAMS_ERROR,"一次最多上传30张图片");
+        //处理抓取地址
+        String resourceUrl = String.format("https://pixabay.com/api/?key=49885606-6f49f0bbe707c69885c43b48d&lang=zh&q=%s&per_page=%s",searchText,count);
+        try{
+            List<String> pictureUrls = fetchImageUrls(resourceUrl);
+            PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+            for (String pictureUrl : pictureUrls){
+                PictureVO pictureVO = this.uploadPicture(pictureUrl,pictureUploadRequest,loginUser);
+                uploadCount ++;
+                log.info("图片上传成功,id:{}",pictureVO.getId());
+            }
+            return uploadCount;
+        }catch(Exception e){
+            log.error("图片抓取失败",e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"图片抓取失败");
+        }
+    }
+
+    private List<String> fetchImageUrls(String resourceUrl){
+        List<String> pictureToUploadUrls = new ArrayList<>();
+        String response = HttpUtil.get(resourceUrl);
+        JSONObject jsonObject =JSONUtil.parseObj(response);
+        ThrowUtils.throwIf(jsonObject.isEmpty(),ErrorCode.OPERATION_ERROR,"图片抓取失败-响应数据为空");
+        JSONArray hits = jsonObject.getJSONArray("hits");
+
+        //遍历results数组,得到每个图片的url
+        for(int i = 0; i < hits.size();i ++){
+            JSONObject hit = hits.getJSONObject(i);
+            String largeImageURL = hit.getStr("largeImageURL");
+            pictureToUploadUrls.add(largeImageURL);
+        }
+        return pictureToUploadUrls;
+    }
     private static Picture buildPictureResult(User loginUser, UploadPictureResult uploadPictureResult, Long pictureId) {
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PictureUpload from '@/components/PictureUpload.vue'
+import FilePictureUpload from '@/components/FilePictureUpload.vue'
 import { onMounted, reactive, ref } from 'vue'
 import {
   editPictureUsingPost,
@@ -8,17 +8,25 @@ import {
 } from '@/api/pictureController.ts'
 import { message } from 'ant-design-vue'
 import { useRoute, useRouter } from 'vue-router'
+import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
+import BatchPictureUpload from '@/components/BatchPictureUpload.vue'
 
 const picture = ref<API.PictureVO>()
 const pictureForm = reactive<API.PictureEditRequest>({})
+const pictureUploadByBatchRequest = ref<API.PictureUploadByBatchRequest>({})
 const categoryOptions = ref<string[]>([])
 const tagOptions = ref<string[]>([])
 const router = useRouter()
 const route = useRoute() //router用于跳转,route获取历史页面
+const uploadType = ref<'file' | 'url'>('file')
 
 const onSuccess = (newPicture: API.PictureVO) => {
   picture.value = newPicture
   pictureForm.name = newPicture.name
+}
+
+const onBatchSuccess = (uploadCount: number) => {
+  message.success(`批量上传成功，共上传${uploadCount}张图片`)
 }
 
 const getTagCategory = async () => {
@@ -90,7 +98,23 @@ onMounted(() => {
   <div id="add-picture-page">
     <h2 style="margin-bottom: 20px">{{ route.query?.id ? '编辑图片' : '创建图片' }}</h2>
     <!--上传图片组件-->
-    <PictureUpload :picture="picture" :onSuccess="onSuccess" />
+    <!-- 选择上传方式 -->
+    <a-tabs v-model:activeKey="uploadType">
+      <a-tab-pane key="file" tab="文件上传">
+        <FilePictureUpload :picture="picture" :onSuccess="onSuccess" />
+      </a-tab-pane>
+      <a-tab-pane key="url" tab="URL 上传" force-render>
+        <UrlPictureUpload :picture="picture" :onSuccess="onSuccess" />
+      </a-tab-pane>
+
+      <a-tab-pane key="batch" tab="批量上传">
+        <BatchPictureUpload
+          :onSuccess="onBatchSuccess"
+          v-model:searchText="pictureUploadByBatchRequest.searchText"
+          v-model:count="pictureUploadByBatchRequest.count"
+        />
+      </a-tab-pane>
+    </a-tabs>
     <!--图片展示表单-->
     <a-form
       v-if="picture"

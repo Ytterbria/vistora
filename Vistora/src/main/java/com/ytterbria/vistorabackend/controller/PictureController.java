@@ -1,11 +1,14 @@
 package com.ytterbria.vistorabackend.controller;
 
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
+import com.ytterbria.vistorabackend.common.request.PageRequest;
 import com.ytterbria.vistorabackend.common.response.BaseResponse;
 import com.ytterbria.vistorabackend.common.response.ResultUtils;
 import com.ytterbria.vistorabackend.constant.UserConstant;
@@ -18,6 +21,9 @@ import com.ytterbria.vistorabackend.model.vo.PictureVO;
 import com.ytterbria.vistorabackend.service.PictureService;
 import com.ytterbria.vistorabackend.service.UserService;
 import net.bytebuddy.implementation.bytecode.Throw;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,6 +42,9 @@ public class PictureController {
 
     @Resource
     private PictureService pictureService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 上传图片
@@ -65,7 +74,14 @@ public class PictureController {
          return ResultUtils.success(pictureVO);
     }
 
+    /**
+     *  批量上传图片
+     * @param pictureUploadByBatchRequest 图片批量上传请求参数
+     * @param httpServletRequest http请求
+     * @return 上传成功的图片数量
+     */
     @PostMapping("/upload/batch")
+    @AuthCheck(mustRole="admin")
     public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,HttpServletRequest httpServletRequest){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchRequest), ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUserInfo(httpServletRequest);
@@ -80,7 +96,7 @@ public class PictureController {
      */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
-        ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest) || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest) ||  deleteRequest.getId() == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
 
         User loginUser = userService.getLoginUserInfo(httpServletRequest);
         //判断将要删除的图片是否存在
@@ -154,15 +170,52 @@ public class PictureController {
      *  根据条件查询图片列表VO 仅管理员可用
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,HttpServletRequest httpServletRequest){
-         long current = pictureQueryRequest.getCurrent();
-         long size = pictureQueryRequest.getPageSize();
+    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PageRequest pageRequest, HttpServletRequest httpServletRequest){
+         int current = pageRequest.getCurrent();
+         int size = pageRequest.getPageSize();
          ThrowUtils.throwIf(current <= 0 || size <= 0 || size >= 20, ErrorCode.PARAMS_ERROR);
 
+
+         PictureQueryRequest pictureQueryRequest = new PictureQueryRequest();
          pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
+         pictureQueryRequest.setCurrent(current);
+         pictureQueryRequest.setPageSize(size);
+
 
          Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
          return ResultUtils.success(pictureService.getPictureVOPage(picturePage,httpServletRequest));
+    }
+
+    @PostMapping("/list/page/vo/cached")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PageRequest pageRequest,HttpServletRequest httpServletRequest){
+        int current = pageRequest.getCurrent();
+        int size = pageRequest.getPageSize();
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size >= 20, ErrorCode.PARAMS_ERROR);
+
+        PictureQueryRequest pictureQueryRequest = new PictureQueryRequest();
+        pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
+        pictureQueryRequest.setCurrent(current);
+        pictureQueryRequest.setPageSize(size);
+
+        //构建缓存key
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String cacheKey = "vistora:ListPictureVOByPageWithCache:" + hashKey;
+        //从缓存中获取数据
+        ValueOperations<String,String> valueOps = stringRedisTemplate.opsForValue();
+        String cachedValue = valueOps.get(cacheKey);
+        if(cachedValue != null){
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+        //如果没有缓存，则从数据库中获取数据并存入redis
+        Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
+        String cacheValue = JSONUtil.toJsonStr(pictureService.getPictureVOPage(picturePage,httpServletRequest));
+        int cacheExpireSeconds = 300 + RandomUtil.randomInt(0,300);//随机过期时间，避免缓存雪崩
+        valueOps.set(cacheKey,cacheValue,cacheExpireSeconds);
+
+        //返回结果
+        return ResultUtils.success(pictureService.getPictureVOPage(picturePage,httpServletRequest));
     }
 
     /**

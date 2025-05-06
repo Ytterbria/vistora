@@ -12,7 +12,4 @@ const loginUserStore = useLoginUserStore()
 loginUserStore.fetchLoginUser()
 </script>
 
-<style>
-#app {
-}
-</style>
+<style></style>

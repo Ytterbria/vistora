@@ -47,9 +47,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService {
 
     @Resource
-    private PictureManager pictureManager;
-
-    @Resource
     private UserService userService;
 
     @Resource
@@ -144,6 +141,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private static Picture buildPictureResult(User loginUser, UploadPictureResult uploadPictureResult, Long pictureId) {
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         picture.setName(uploadPictureResult.getPicName());
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());

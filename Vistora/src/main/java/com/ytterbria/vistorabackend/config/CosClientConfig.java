@@ -17,7 +17,9 @@ public class CosClientConfig {
     //域名
     private String host;
 
+    //密钥ID
     private String secretId;
+
     //密钥
     private String secretKey;
 

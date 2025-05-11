@@ -4,6 +4,8 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
@@ -29,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -46,6 +49,14 @@ public class PictureController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * 本地缓存
+     */
+    private final Cache<String,String> LOCAL_CACHE = Caffeine.newBuilder()
+            .initialCapacity(1024)//初始化缓存数量
+            .maximumSize(10_000L)//最大缓存数量
+            .expireAfterWrite(Duration.ofMinutes(5))//过期时间为5分钟
+            .build();
     /**
      * 上传图片
      * @param multipartFile 用户上传的文件
@@ -167,16 +178,14 @@ public class PictureController {
     }
 
     /**
-     *  根据条件查询图片列表VO 仅管理员可用
+     *  根据条件查询图片列表VO
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PageRequest pageRequest, HttpServletRequest httpServletRequest){
-         int current = pageRequest.getCurrent();
-         int size = pageRequest.getPageSize();
+    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest httpServletRequest){
+         int current = pictureQueryRequest.getCurrent();
+         int size = pictureQueryRequest.getPageSize();
          ThrowUtils.throwIf(current <= 0 || size <= 0 || size >= 20, ErrorCode.PARAMS_ERROR);
 
-
-         PictureQueryRequest pictureQueryRequest = new PictureQueryRequest();
          pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
          pictureQueryRequest.setCurrent(current);
          pictureQueryRequest.setPageSize(size);
@@ -186,13 +195,12 @@ public class PictureController {
          return ResultUtils.success(pictureService.getPictureVOPage(picturePage,httpServletRequest));
     }
 
-    @PostMapping("/list/page/vo/cached")
-    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PageRequest pageRequest,HttpServletRequest httpServletRequest){
-        int current = pageRequest.getCurrent();
-        int size = pageRequest.getPageSize();
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,HttpServletRequest httpServletRequest){
+        int current = pictureQueryRequest.getCurrent();
+        int size = pictureQueryRequest.getPageSize();
         ThrowUtils.throwIf(current <= 0 || size <= 0 || size >= 20, ErrorCode.PARAMS_ERROR);
 
-        PictureQueryRequest pictureQueryRequest = new PictureQueryRequest();
         pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
         pictureQueryRequest.setCurrent(current);
         pictureQueryRequest.setPageSize(size);
@@ -201,17 +209,26 @@ public class PictureController {
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
         String cacheKey = "vistora:ListPictureVOByPageWithCache:" + hashKey;
-        //从缓存中获取数据
-        ValueOperations<String,String> valueOps = stringRedisTemplate.opsForValue();
-        String cachedValue = valueOps.get(cacheKey);
+        //1.先查本地缓存caffeine中有没有记录
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+
         if(cachedValue != null){
             Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachedPage);
         }
-        //如果没有缓存，则从数据库中获取数据并存入redis
+        //2.如果本地缓存没有查到,那就再查redis缓存
+        ValueOperations<String,String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(cacheKey);
+        if (cachedValue != null){
+            LOCAL_CACHE.put(cacheKey,cachedValue);
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue,Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+
+        //3.如果redis缓存也没有查到,那就查数据库,然后存入redis缓存
         Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
         String cacheValue = JSONUtil.toJsonStr(pictureService.getPictureVOPage(picturePage,httpServletRequest));
-        int cacheExpireSeconds = 300 + RandomUtil.randomInt(0,300);//随机过期时间，避免缓存雪崩
+        int cacheExpireSeconds = 0 + RandomUtil.randomInt(0,10);//随机过期时间，避免缓存雪崩
         valueOps.set(cacheKey,cacheValue,cacheExpireSeconds);
 
         //返回结果

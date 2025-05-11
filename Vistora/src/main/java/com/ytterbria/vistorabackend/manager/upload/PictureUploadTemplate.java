@@ -1,13 +1,17 @@
 package com.ytterbria.vistorabackend.manager.upload;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
+import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
+import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.config.CosClientConfig;
 import com.ytterbria.vistorabackend.manager.CosManager;
 import com.ytterbria.vistorabackend.model.dto.picture.UploadPictureResult;
@@ -17,6 +21,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 public abstract class PictureUploadTemplate {
@@ -40,21 +45,30 @@ public abstract class PictureUploadTemplate {
         File file = null;
         try{
             file = File.createTempFile(uploadPath,null);
+
             processFile(inputSource,file);
+
             PutObjectResult putObjectResult = cosManager.putPictureObject(uploadPath,file);
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
+            //获得处理后的图片结果
+            ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
+            List<CIObject> objectList = processResults.getObjectList();
+            ThrowUtils.throwIf(CollUtil.isEmpty(objectList),ErrorCode.OPERATION_ERROR,"图片处理失败");
 
+            //获取压缩之后得到的文件信息
+            CIObject compressedCiObject = objectList.get(0);
+            CIObject thumbnailCiObject = objectList.get(0);
+            if (objectList.size() > 1) {
+                thumbnailCiObject = objectList.get(1);
+            }
             //4.封装返回结果
-            return wrapUploadPictureResult(originFilename,file,uploadPath,imageInfo);
+            return wrapUploadPictureResult(originFilename,compressedCiObject,thumbnailCiObject);
         } catch(Exception e){
             log.error("图片上传到cos失败",e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"图片上传到cos失败");
         }finally{
             deleteTempFile(file);
         }
-
-
-
     }
 
     /**
@@ -79,22 +93,22 @@ public abstract class PictureUploadTemplate {
     /**
      * 封装返回结果
      * @param originFilename 原始文件名
-     * @param file 本地临时文件
-     * @param uploadPath 上传路径
-     * @param imageInfo 图片信息
+     * @param ciObject 处理后的图片结果
+     * @return 上传结果
      */
-    private UploadPictureResult wrapUploadPictureResult(String originFilename, File file,String uploadPath, ImageInfo imageInfo){
+    private UploadPictureResult wrapUploadPictureResult(String originFilename, CIObject ciObject,  CIObject thumbnailCiObject){
         UploadPictureResult uploadPictureResult = new UploadPictureResult();
-        int picWidth = imageInfo.getWidth();
-        int picHeight = imageInfo.getHeight();
+        int picWidth = ciObject.getWidth();
+        int picHeight = ciObject.getHeight();
         double picScale = NumberUtil.round(picWidth * 1.0 / picHeight,2).doubleValue();
         uploadPictureResult.setPicName(originFilename);
-        uploadPictureResult.setPicSize(FileUtil.size(file));
+        uploadPictureResult.setPicSize(ciObject.getSize().longValue());
         uploadPictureResult.setPicWidth(picWidth);
         uploadPictureResult.setPicHeight(picHeight);
         uploadPictureResult.setPicScale(picScale);
-        uploadPictureResult.setPicFormat(imageInfo.getFormat());
-        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+        uploadPictureResult.setPicFormat(ciObject.getFormat());
+        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
+        uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCiObject.getKey());
         return uploadPictureResult;
     }
     /**

@@ -79,7 +79,7 @@ export async function listPictureByPageUsingPost(
 
 /** listPictureVOByPage POST /api/picture/list/page/vo */
 export async function listPictureVoByPageUsingPost(
-  body: API.PageRequest,
+  body: API.PictureQueryRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePictureVO_>('/api/picture/list/page/vo', {
@@ -92,12 +92,12 @@ export async function listPictureVoByPageUsingPost(
   })
 }
 
-/** listPictureVOByPageWithCache POST /api/picture/list/page/vo/cached */
+/** listPictureVOByPageWithCache POST /api/picture/list/page/vo/cache */
 export async function listPictureVoByPageWithCacheUsingPost(
-  body: API.PageRequest,
+  body: API.PictureQueryRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePagePictureVO_>('/api/picture/list/page/vo/cached', {
+  return request<API.BaseResponsePagePictureVO_>('/api/picture/list/page/vo/cache', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

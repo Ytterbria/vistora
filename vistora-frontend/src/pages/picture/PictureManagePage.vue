@@ -122,10 +122,6 @@
             <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
           </a-space>
         </template>
-
-        <!--        <template v-else-if="column.key === 'action'">-->
-        <!--          <a-button type="link" @click="handleDelete(record)">删除</a-button>-->
-        <!--        </template>-->
       </template>
     </a-table>
   </div>
@@ -134,7 +130,7 @@
 <script lang="ts" setup>
 import { PlusOutlined } from '@ant-design/icons-vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import {
   deletePictureUsingPost,
   doPictureReviewUsingPost,
@@ -247,18 +243,25 @@ const handleTableChange = (page: any) => {
 }
 
 const handleDelete = async (record: API.Picture) => {
-  try {
-    const res = await deletePictureUsingPost({ id: record.id })
-    console.log(record.id)
-    if (res.data.code === 0) {
-      message.success('图片删除成功')
-      await fetchData()
-    } else {
-      message.error('图片删除失败' + res.data.message)
-    }
-  } catch (error) {
-    message.error('图片删除失败' + error)
-  }
+  Modal.confirm({
+    title: '确认删除',
+    content: `确定要删除图片 "${record.name}" 吗？`,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const res = await deletePictureUsingPost({ id: record.id })
+        if (res.data.code === 0) {
+          message.success('图片删除成功')
+          await fetchData()
+        } else {
+          message.error('图片删除失败: ' + res.data.message)
+        }
+      } catch (error) {
+        message.error('图片删除失败: ' + error)
+      }
+    },
+  })
 }
 
 const handleReview = async (record: API.Picture, reviewStatus: number) => {

@@ -132,13 +132,6 @@ declare namespace API {
     total?: number
   }
 
-  type PageRequest = {
-    current?: number
-    pageSize?: number
-    sortField?: string
-    sortOrder?: string
-  }
-
   type PageUserManageVO_ = {
     current?: number
     pages?: number
@@ -165,6 +158,7 @@ declare namespace API {
     reviewTime?: string
     reviewerId?: number
     tags?: string
+    thumbnailUrl?: string
     updateTime?: string
     url?: string
     userId?: number
@@ -241,6 +235,7 @@ declare namespace API {
     picSize?: number
     picWidth?: number
     tags?: string[]
+    thumbnailUrl?: string
     updateTime?: string
     url?: string
     user?: LoginUserVO

@@ -2,6 +2,7 @@ package com.ytterbria.vistorabackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.model.dto.picture.*;
 import com.ytterbria.vistorabackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -35,6 +36,10 @@ public interface PictureService extends IService<Picture> {
      */
     Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest,User loginUser);
 
+    /**
+     *
+     */
+    boolean deletePicture(DeleteRequest deleteRequest, HttpServletRequest request);
     /**
      * @description 构造图片QueryWrapper
      * @param pictureQueryRequest 图片上传请求

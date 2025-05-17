@@ -31,59 +31,40 @@
     </div>
 
     <!-- 瀑布流容器 -->
-    <div class="waterfall-container">
-      <div
+    <div ref="waterfallContainer" class="waterfall-container">
+      <WaterfallItem
         v-for="picture in dataList"
         :key="picture.id"
-        class="waterfall-item"
+        :picture="picture"
         @click="handlePictureDetail(picture.id)"
-      >
-        <img
-          class="waterfall-image"
-          :src="picture.url"
-          :alt="picture.name"
-          @load="handleImageLoaded"
-        />
-        <div class="waterfall-overlay">
-          <h3>{{ picture.name }}</h3>
-          <div class="tags">
-            <a-tag color="green">{{ picture.category ?? '默认' }}</a-tag>
-            <a-tag v-for="tag in picture.tags" :key="tag">{{ tag }}</a-tag>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination" style="text-align: center; margin-top: 70px">
-      <a-pagination
-        v-model:current="searchParams.current"
-        :total="total"
-        :page-size="searchParams.pageSize"
-        @change="handlePageChange"
       />
     </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading && !noMoreData" class="loading-wrapper">
+      <a-spin />
+      <span>加载中...</span>
+    </div>
+
+    <div v-if="noMoreData && dataList.length > 0" class="no-more-data">没有更多数据了</div>
   </div>
 </template>
+
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
+import WaterfallItem from '@/components/WaterFallItem.vue'
 import {
   listPictureTagCategoryUsingGet,
-  listPictureVoByPageUsingPost,
   listPictureVoByPageWithCacheUsingPost,
-} from '@/api/pictureController.ts'
-import { message } from 'ant-design-vue'
+} from '@/api/pictureController'
 
-// 导入接口类型
-import type { PictureVO } from '@/api/pictureController.ts'
-import { useRouter } from 'vue-router'
-
-// 初始化数据
-const dataList = ref<PictureVO[]>([])
-const total = ref<number>(0)
-const loading = ref<boolean>(false)
+// 响应式数据
 const router = useRouter()
-// 搜索条件
+const dataList = ref<API.PictureVO[]>([])
+const loading = ref<boolean>(false)
+const noMoreData = ref<boolean>(false)
 const searchParams = reactive<API.PictureQueryRequest>({
   current: 1,
   pageSize: 12,
@@ -91,56 +72,74 @@ const searchParams = reactive<API.PictureQueryRequest>({
   sortOrder: 'desc',
 })
 
+// 分类标签数据
 const categoryList = ref<string[]>([])
 const selectedCategory = ref<string>('all')
 const tagList = ref<string[]>([])
 const selectedTagList = ref<boolean[]>([])
 
-// 获取标签和分类选项
+// 获取分类标签选项
 const getTagCategoryOptions = async () => {
-  const res = await listPictureTagCategoryUsingGet()
-  if (res.data.code === 0 && res.data.data) {
-    categoryList.value = res.data.data.categoryList ?? []
-    tagList.value = res.data.data.tagList ?? []
-    selectedTagList.value = Array(res.data.data.tagList?.length ?? 0).fill(false)
-  } else {
-    message.error('加载分类标签失败，' + res.data.message)
+  try {
+    const res = await listPictureTagCategoryUsingGet()
+    if (res.data.code === 0 && res.data.data) {
+      const { categoryList: categories, tagList: tags } = res.data.data
+      categoryList.value = categories ?? []
+      tagList.value = tags ?? []
+      selectedTagList.value = Array(tags?.length ?? 0).fill(false)
+    }
+  } catch (error) {
+    message.error('加载分类标签失败')
   }
 }
 
-const handleSearch = () => {
-  searchParams.current = 1
-  fetchData()
-}
-
-// 分页逻辑
-const handlePageChange = (page: number) => {
-  searchParams.current = page
-  fetchData()
-}
-
-const fetchData = async () => {
-  loading.value = true
-  const params = {
-    ...searchParams,
-    tags: [],
-  }
+// 构建请求参数
+const buildSearchParams = () => {
+  const params = { ...searchParams }
   if (selectedCategory.value !== 'all') {
     params.category = selectedCategory.value
   }
-  selectedTagList.value.forEach((checked, index) => {
-    if (checked) {
-      params.tags.push(tagList.value[index])
+
+  params.tags = selectedTagList.value
+    .map((checked, index) => (checked ? tagList.value[index] : null))
+    .filter((tag) => tag !== null) as string[]
+
+  return params
+}
+
+// 数据加载
+const fetchData = async () => {
+  if (loading.value || noMoreData.value) return
+
+  loading.value = true
+  const params = buildSearchParams()
+
+  try {
+    const res = await listPictureVoByPageWithCacheUsingPost(params)
+    if (res.data.code === 0 && res.data.data?.records) {
+      const newData = res.data.data.records
+      dataList.value = [...dataList.value, ...newData]
+
+      // 判断是否还有更多数据
+      if (newData.length < params.pageSize!) {
+        noMoreData.value = true
+      } else {
+        searchParams.current = (searchParams.current || 0) + 1
+      }
     }
-  })
-  const res = await listPictureVoByPageWithCacheUsingPost(params)
-  if (res.data.data) {
-    dataList.value = res.data.data.records as PictureVO[]
-    total.value = res.data.data.total ?? 0
-  } else {
-    message.error('获取数据失败，' + res.data.message)
+  } catch (error) {
+    message.error('数据加载失败')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
+}
+
+// 搜索处理
+const handleSearch = () => {
+  searchParams.current = 1
+  noMoreData.value = false
+  dataList.value = []
+  fetchData()
 }
 
 const handlePictureDetail = (id) => {
@@ -149,113 +148,63 @@ const handlePictureDetail = (id) => {
   })
 }
 
-// 图片加载完成后重新布局
-const handleImageLoaded = () => {
-  const container = document.querySelector('.waterfall-container')
-  if (container) {
-    container.dispatchEvent(new Event('resize'))
+// 滚动监听
+const isBottom = () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const bodyHeight = document.body.scrollHeight
+  return scrollTop + windowHeight >= bodyHeight - 100 // 提前100px加载
+}
+
+const handleScroll = () => {
+  if (isBottom()) {
+    fetchData()
   }
 }
 
-onMounted(() => {
+// 生命周期
+onMounted(async () => {
+  await getTagCategoryOptions()
   fetchData()
-  getTagCategoryOptions()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <style scoped>
+.tag-bar {
+  margin-bottom: 20px;
+}
 .search-bar {
   width: 500px;
-  margin: 0 auto;
-}
-/* 四周留白 */
-#home-page {
-  padding: 24px; /* 页面整体留白 */
+  margin: 0 auto 24px;
 }
 
 .waterfall-container {
   column-count: 4;
   column-gap: 16px;
-  margin: 0 auto; /* 居中显示 */
-  padding: 0 24px; /* 左右留白 */
+  padding: 0 24px;
 }
 
-/* 悬浮信息框优化 */
-.waterfall-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px; /* 增加内边距 */
-  background: rgba(255, 255, 255, 0.9); /* 浅色半透明背景 */
-  color: #2c2c2c; /* 深灰色文字 */
-  opacity: 0;
-  transition: all 0.3s ease; /* 平滑过渡 */
-  border-radius: 8px 8px 0 0; /* 顶部圆角 */
-  backdrop-filter: blur(8px); /* 毛玻璃效果 */
-  transform: translateY(100%); /* 初始隐藏 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* 轻微阴影 */
+.loading-wrapper,
+.no-more-data {
+  text-align: center;
+  margin: 20px 0;
+  color: #666;
 }
 
-.waterfall-item:hover .waterfall-overlay {
-  opacity: 1;
-  transform: translateY(0); /* 悬浮时显示 */
-}
-
-/* 其他样式优化 */
-.waterfall-item {
-  break-inside: avoid;
-  margin: 0 8px;
-  padding: 8px 0;
-  position: relative;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.waterfall-item:hover {
-  transform: translateY(-8px); /* 上浮效果更明显 */
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); /* 更柔和的阴影 */
-}
-
-.waterfall-image {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px; /* 图片圆角 */
-}
-
-.tags {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tags :deep(.ant-tag) {
-  margin: 0;
-  background: rgba(255, 255, 255, 0.6); /* 更浅的标签背景 */
-  color: #555;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-/* 响应式列数 */
 @media (max-width: 768px) {
   .waterfall-container {
     column-count: 2;
   }
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   .waterfall-container {
     column-count: 3;
-  }
-}
-
-@media (min-width: 1024px) {
-  .waterfall-container {
-    column-count: 4;
   }
 }
 </style>

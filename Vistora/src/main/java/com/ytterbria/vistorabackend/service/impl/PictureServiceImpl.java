@@ -10,10 +10,13 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qcloud.cos.exception.CosClientException;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
+import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
+import com.ytterbria.vistorabackend.manager.CosManager;
 import com.ytterbria.vistorabackend.manager.PictureManager;
 import com.ytterbria.vistorabackend.manager.upload.FilePictureUpload;
 import com.ytterbria.vistorabackend.manager.upload.PictureUploadTemplate;
@@ -54,6 +57,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private CosManager cosManager;
 
     /**
      * 上传图片 ,根据用户id划分目录,上传到cos的路径格式为: public/userId/上传时间_uuid.后缀
@@ -312,6 +318,38 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //操作数据库
         boolean result = this.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return true;
+    }
+
+    @Override
+    public boolean deletePicture(DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
+        ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest) ||  deleteRequest.getId() == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+
+        User loginUser = userService.getLoginUserInfo(httpServletRequest);
+        //判断将要删除的图片是否存在
+        long id = deleteRequest.getId();
+        Picture pictureToDelete = this.getById(id);
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureToDelete), ErrorCode.NOT_FOUND_ERROR);
+
+        //判断用户是否有权限删除图片,仅本人或管理员可以删除
+        ThrowUtils.throwIf(!pictureToDelete.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
+
+        //操作数据库
+        boolean sqlResult = this.removeById(pictureToDelete.getId());
+        ThrowUtils.throwIf(!sqlResult, ErrorCode.OPERATION_ERROR);
+
+        //操作COS`
+        String urlToDel = pictureToDelete.getUrl();
+        String thumbnailUrlToDel = pictureToDelete.getThumbnailUrl();
+        ThrowUtils.throwIf(StrUtil.isBlank(urlToDel), ErrorCode.OPERATION_ERROR,"图片url为空");
+        try {
+            cosManager.deleteObject(urlToDel);
+            if (StrUtil.isNotBlank(thumbnailUrlToDel)){
+                cosManager.deleteObject(thumbnailUrlToDel);
+            }
+        } catch (CosClientException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"删除COS图片失败");
+        }
         return true;
     }
 

@@ -13,8 +13,10 @@ import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.common.request.PageRequest;
 import com.ytterbria.vistorabackend.common.response.BaseResponse;
 import com.ytterbria.vistorabackend.common.response.ResultUtils;
+import com.ytterbria.vistorabackend.config.CosClientConfig;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
+import com.ytterbria.vistorabackend.manager.CosManager;
 import com.ytterbria.vistorabackend.model.dto.picture.*;
 import com.ytterbria.vistorabackend.model.entity.Picture;
 import com.ytterbria.vistorabackend.model.entity.User;
@@ -107,21 +109,10 @@ public class PictureController {
      */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
-        ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest) ||  deleteRequest.getId() == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
 
-        User loginUser = userService.getLoginUserInfo(httpServletRequest);
-        //判断将要删除的图片是否存在
-        long id = deleteRequest.getId();
-        Picture pictureToDelete = pictureService.getById(id);
-        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureToDelete), ErrorCode.NOT_FOUND_ERROR);
+        boolean result = pictureService.deletePicture(deleteRequest,httpServletRequest);
 
-        //判断用户是否有权限删除图片,仅本人或管理员可以删除
-        ThrowUtils.throwIf(!pictureToDelete.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
-
-        //操作数据库
-        boolean result = pictureService.removeById(pictureToDelete.getId());
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        return ResultUtils.success(true);
+       return ResultUtils.success(result);
      }
 
      /**
@@ -228,7 +219,7 @@ public class PictureController {
         //3.如果redis缓存也没有查到,那就查数据库,然后存入redis缓存
         Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
         String cacheValue = JSONUtil.toJsonStr(pictureService.getPictureVOPage(picturePage,httpServletRequest));
-        int cacheExpireSeconds = 0 + RandomUtil.randomInt(0,10);//随机过期时间，避免缓存雪崩
+        int cacheExpireSeconds = RandomUtil.randomInt(10,100);//随机过期时间，避免缓存雪崩
         valueOps.set(cacheKey,cacheValue,cacheExpireSeconds);
 
         //返回结果

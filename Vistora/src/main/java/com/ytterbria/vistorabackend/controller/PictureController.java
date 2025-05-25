@@ -19,10 +19,12 @@ import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
 import com.ytterbria.vistorabackend.manager.CosManager;
 import com.ytterbria.vistorabackend.model.dto.picture.*;
 import com.ytterbria.vistorabackend.model.entity.Picture;
+import com.ytterbria.vistorabackend.model.entity.Space;
 import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.PictureTagCategory;
 import com.ytterbria.vistorabackend.model.vo.PictureVO;
 import com.ytterbria.vistorabackend.service.PictureService;
+import com.ytterbria.vistorabackend.service.SpaceService;
 import com.ytterbria.vistorabackend.service.UserService;
 import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -39,7 +41,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
-@RequestMapping("picture")
+@RequestMapping("/picture")
 public class PictureController {
 
     @Resource
@@ -47,6 +49,9 @@ public class PictureController {
 
     @Resource
     private PictureService pictureService;
+
+    @Resource
+    private SpaceService spaceService;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -71,7 +76,9 @@ public class PictureController {
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest httpServletRequest
             ){
+        ThrowUtils.throwIf(ObjUtil.isEmpty(multipartFile) || ObjUtil.isEmpty(pictureUploadRequest), ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUserInfo(httpServletRequest);
+
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile,pictureUploadRequest,loginUser);
         return ResultUtils.success(pictureVO);
     }
@@ -81,7 +88,10 @@ public class PictureController {
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest httpServletRequest
             ){
-         User loginUser = userService.getLoginUserInfo(httpServletRequest);
+        // 校验参数
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadRequest), ErrorCode.PARAMS_ERROR);
+
+        User loginUser = userService.getLoginUserInfo(httpServletRequest);
          String fileUrl = pictureUploadRequest.getFileUrl();
          PictureVO pictureVO = pictureService.uploadPicture(fileUrl,pictureUploadRequest,loginUser);
          return ResultUtils.success(pictureVO);
@@ -110,6 +120,8 @@ public class PictureController {
     @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
 
+        ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest), ErrorCode.PARAMS_ERROR);
+
         boolean result = pictureService.deletePicture(deleteRequest,httpServletRequest);
 
        return ResultUtils.success(result);
@@ -122,6 +134,9 @@ public class PictureController {
      @PostMapping("/update")
      @AuthCheck(mustRole = "admin")
     public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest,HttpServletRequest httpServletRequest){
+
+         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateRequest) || pictureUpdateRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+
          Boolean result = pictureService.updatePicture(pictureUpdateRequest,httpServletRequest);
 
          return ResultUtils.success(result);
@@ -181,12 +196,24 @@ public class PictureController {
          pictureQueryRequest.setCurrent(current);
          pictureQueryRequest.setPageSize(size);
 
+        //空间权限校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if (spaceId != null) {
+            User loginUser = userService.getLoginUserInfo(httpServletRequest);
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "没有权限访问该空间");
+        } else {
+            pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
+            pictureQueryRequest.setPubOnly(1);
+        }
 
          Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
-         return ResultUtils.success(pictureService.getPictureVOPage(picturePage,httpServletRequest));
+         return ResultUtils.success(pictureService.getPictureVOPage(picturePage));
     }
 
     @PostMapping("/list/page/vo/cache")
+    @Deprecated
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest,HttpServletRequest httpServletRequest){
         int current = pictureQueryRequest.getCurrent();
         int size = pictureQueryRequest.getPageSize();
@@ -195,7 +222,17 @@ public class PictureController {
         pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
         pictureQueryRequest.setCurrent(current);
         pictureQueryRequest.setPageSize(size);
-
+        //空间权限校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if (spaceId != null) {
+            User loginUser = userService.getLoginUserInfo(httpServletRequest);
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "没有权限访问该空间");
+        } else {
+            pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
+            pictureQueryRequest.setPubOnly(1);
+        }
         //构建缓存key
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
@@ -218,12 +255,12 @@ public class PictureController {
 
         //3.如果redis缓存也没有查到,那就查数据库,然后存入redis缓存
         Page<Picture> picturePage = pictureService.page(new Page<>(current,size),pictureService.getQueryWrapper(pictureQueryRequest));
-        String cacheValue = JSONUtil.toJsonStr(pictureService.getPictureVOPage(picturePage,httpServletRequest));
-        int cacheExpireSeconds = RandomUtil.randomInt(10,100);//随机过期时间，避免缓存雪崩
+        String cacheValue = JSONUtil.toJsonStr(pictureService.getPictureVOPage(picturePage));
+        int cacheExpireSeconds = 200 + RandomUtil.randomInt(100, 300);//随机过期时间，避免缓存雪崩
         valueOps.set(cacheKey,cacheValue,cacheExpireSeconds);
 
         //返回结果
-        return ResultUtils.success(pictureService.getPictureVOPage(picturePage,httpServletRequest));
+        return ResultUtils.success(pictureService.getPictureVOPage(picturePage));
     }
 
     /**

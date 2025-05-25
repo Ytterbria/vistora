@@ -56,15 +56,16 @@ public interface PictureService extends IService<Picture> {
     /**
      * @description 获得分页图片封装类
      * @param picturePage 分页图片实体类
-     * @param request http请求
      */
-    Page<PictureVO> getPictureVOPage(Page<Picture> picturePage,HttpServletRequest request);
+    Page<PictureVO> getPictureVOPage(Page<Picture> picturePage);
 
     boolean editPicture(PictureEditRequest pictureEditRequest,HttpServletRequest request);
 
     boolean updatePicture(PictureUpdateRequest pictureUpdateRequest,HttpServletRequest request);
 
     void validatePicture(Picture picture);
+
+    void checkPictureAuth(User loginUer, Picture picture);
 
     void reviewPicture(PictureReviewRequest pictureReviewRequest, User loginUser);
 

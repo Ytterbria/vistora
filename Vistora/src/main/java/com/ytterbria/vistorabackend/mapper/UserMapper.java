@@ -9,6 +9,7 @@ import com.ytterbria.vistorabackend.model.entity.User;
 * @createDate 2025-02-28 22:56:32
 * @Entity generator.domain.User
 */
+
 public interface UserMapper extends BaseMapper<User> {
 }
 

@@ -3,7 +3,7 @@ create table if not exists picture
 (
     id           bigint auto_increment comment 'id' primary key,
     url          varchar(512)                       not null comment '图片 url',
-    name         varchar(128)                       not null comment '图片名称',
+    name varchar(512) not null comment '图片名称',
     introduction varchar(512)                       null comment '简介',
     category     varchar(64)                        null comment '分类',
     tags         varchar(512)                      null comment '标签（JSON 数组）',
@@ -38,4 +38,11 @@ ALTER TABLE picture
     -- 添加新列
     ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图url';
 
+ALTER TABLE picture
+    --  添加新列
+    ADD COLUMN spaceId bigint null comment '空间id(若为空,则说明属于公共图库)';
+
+ALTER TABLE picture
+    --  添加新列
+    ADD COLUMN pubOnly tinyint default 1 comment '是否为公共图库'; # 1-公共图库，0-私有图库
 

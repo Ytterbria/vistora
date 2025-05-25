@@ -20,24 +20,22 @@ import { uploadPictureByUrlUsingPost } from '@/api/pictureController.ts'
 
 interface Props {
   picture?: API.PictureVO
+  spaceId?: number
   onSuccess?: (newPicture: API.PictureVO) => void
 }
 const props = defineProps<Props>()
-
 const loading = ref<boolean>(false)
 const fileUrl = ref<string>()
 
 /**
  * 上传
  */
-const handleUpload = async () => {
+const handleUpload = async ({ file }: any) => {
   loading.value = true
   try {
-    const params: API.PictureUploadRequest = { fileUrl: fileUrl.value }
-    if (props.picture) {
-      params.id = props.picture.id
-    }
-    const res = await uploadPictureByUrlUsingPost(params)
+    const params: API.PictureUploadRequest = props.picture ? { id: props.picture.id } : {}
+    params.spaceId = props.spaceId
+    const res = await uploadPictureByUrlUsingPost(params, {}, file)
     if (res.data.code === 0 && res.data.data) {
       message.success('图片上传成功')
       // 将上传成功的图片信息传递给父组件
@@ -46,10 +44,9 @@ const handleUpload = async () => {
       message.error('图片上传失败，' + res.data.message)
     }
   } catch (error) {
-    message.error('图片上传失败')
-  } finally {
-    loading.value = false
+    console.error('图片上传失败', error)
   }
+  loading.value = false
 }
 </script>
 <style scoped>

@@ -188,7 +188,7 @@ const canEdit = computed(() => {
 
 // 编辑操作
 const handleEdit = () => {
-  router.push(`/edit-picture/${picture.value.id}`)
+  router.push(`/add_picture?id=${picture.value.id}`)
 }
 
 // 处理下载

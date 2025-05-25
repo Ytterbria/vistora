@@ -12,7 +12,7 @@
     </div>
 
     <!-- 分类 + 标签 -->
-    <a-tabs v-model:activeKey="selectedCategory" @change="handleSearch">
+    <a-tabs v-model:activeKey="selectedCategory" @change="handleSearch" style="margin-left: 20px">
       <a-tab-pane key="all" tab="全部" />
       <a-tab-pane v-for="category in categoryList" :key="category" :tab="category" />
     </a-tabs>
@@ -31,14 +31,19 @@
     </div>
 
     <!-- 瀑布流容器 -->
-    <div ref="waterfallContainer" class="waterfall-container">
+    <transition-group
+      name="waterfall"
+      tag="div"
+      ref="waterfallContainer"
+      class="waterfall-container"
+    >
       <WaterfallItem
         v-for="picture in dataList"
         :key="picture.id"
         :picture="picture"
         @click="handlePictureDetail(picture.id)"
       />
-    </div>
+    </transition-group>
 
     <!-- 加载状态 -->
     <div v-if="loading && !noMoreData" class="loading-wrapper">
@@ -57,7 +62,7 @@ import { message } from 'ant-design-vue'
 import WaterfallItem from '@/components/WaterFallItem.vue'
 import {
   listPictureTagCategoryUsingGet,
-  listPictureVoByPageWithCacheUsingPost,
+  listPictureVoByPageUsingPost,
 } from '@/api/pictureController'
 
 // 响应式数据
@@ -115,7 +120,7 @@ const fetchData = async () => {
   const params = buildSearchParams()
 
   try {
-    const res = await listPictureVoByPageWithCacheUsingPost(params)
+    const res = await listPictureVoByPageUsingPost(params)
     if (res.data.code === 0 && res.data.data?.records) {
       const newData = res.data.data.records
       dataList.value = [...dataList.value, ...newData]
@@ -177,18 +182,22 @@ onUnmounted(() => {
 <style scoped>
 .tag-bar {
   margin-bottom: 20px;
+  margin-left: 20px;
 }
 .search-bar {
   width: 500px;
   margin: 0 auto 24px;
 }
-
 .waterfall-container {
   column-count: 4;
   column-gap: 16px;
   padding: 0 24px;
+  /* transition-group 需要 position: relative */
+  position: relative;
 }
-
+.waterfall-move {
+  transition: transform 1s;
+}
 .loading-wrapper,
 .no-more-data {
   text-align: center;

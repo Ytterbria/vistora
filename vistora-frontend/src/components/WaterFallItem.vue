@@ -1,7 +1,6 @@
-<!-- WaterfallItem.vue -->
 <template>
-  <div class="waterfall-item">
-    <div class="card" @click="handleClick">
+  <div class="waterfall-item" @click="handleClick">
+    <div class="card">
       <img
         class="card-image"
         :src="picture.thumbnailUrl ?? picture.url"
@@ -21,51 +20,42 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-
-const props = defineProps<{
-  picture: API.PictureVO
-}>()
-
+const props = defineProps<{ picture: API.PictureVO }>()
 const emit = defineEmits(['click'])
-
-const handleClick = () => {
-  emit('click')
-}
-
-const handleLoad = () => {
-  window.dispatchEvent(new Event('resize'))
-}
+const handleClick = () => emit('click')
+const handleLoad = () => window.dispatchEvent(new Event('resize'))
 </script>
 
 <style scoped>
+.waterfall-item {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.waterfall-item:hover {
+  transform: translateY(-6px) scale(1.03);
+}
 .card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
 .card-image {
   width: 100%;
-  height: auto;
-  display: block;
-  aspect-ratio: 16 / 9; /* 统一图片比例 */
-  object-fit: cover; /* 保持图片比例并裁剪 */
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #f5f5f5;
 }
-
 .card-content {
   padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
-
 .card-title {
   margin: 0 0 8px;
   font-size: 16px;
@@ -74,20 +64,15 @@ const handleLoad = () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
-
 .card-tags .tag {
-  margin: 0;
-  padding: 2px 8px;
   font-size: 12px;
   background: rgba(255, 255, 255, 0.8);
   color: #555;
-  border: none;
   border-radius: 4px;
 }
 </style>

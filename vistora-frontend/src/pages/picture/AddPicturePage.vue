@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FilePictureUpload from '@/components/FilePictureUpload.vue'
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import {
   editPictureUsingPost,
   getPictureVoByIdUsingGet,
@@ -19,6 +19,9 @@ const tagOptions = ref<string[]>([])
 const router = useRouter()
 const route = useRoute() //router用于跳转,route获取历史页面
 const uploadType = ref<'file' | 'url'>('file')
+const spaceId = computed(() => {
+  return route.query?.spaceId as string
+})
 
 const onSuccess = (newPicture: API.PictureVO) => {
   picture.value = newPicture
@@ -101,10 +104,10 @@ onMounted(() => {
     <!-- 选择上传方式 -->
     <a-tabs v-model:activeKey="uploadType">
       <a-tab-pane key="file" tab="文件上传">
-        <FilePictureUpload :picture="picture" :onSuccess="onSuccess" />
+        <FilePictureUpload :picture="picture" :spaceId="spaceId" :onSuccess="onSuccess" />
       </a-tab-pane>
       <a-tab-pane key="url" tab="URL 上传" force-render>
-        <UrlPictureUpload :picture="picture" :onSuccess="onSuccess" />
+        <UrlPictureUpload :picture="picture" :spaceId="spaceId" :onSuccess="onSuccess" />
       </a-tab-pane>
 
       <a-tab-pane key="batch" tab="批量上传">

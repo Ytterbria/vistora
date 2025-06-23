@@ -18,7 +18,6 @@ import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
 import com.ytterbria.vistorabackend.manager.CosManager;
-import com.ytterbria.vistorabackend.manager.PictureManager;
 import com.ytterbria.vistorabackend.manager.upload.FilePictureUpload;
 import com.ytterbria.vistorabackend.manager.upload.PictureUploadTemplate;
 import com.ytterbria.vistorabackend.manager.upload.UrlPictureUpload;
@@ -34,13 +33,14 @@ import com.ytterbria.vistorabackend.service.SpaceService;
 import com.ytterbria.vistorabackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -70,6 +70,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     /**
      * 上传图片 ,根据用户id划分目录,上传到cos的路径格式为: public/userId/上传时间_uuid.后缀
@@ -210,6 +213,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         if (spaceId != null) {
             picture.setSpaceId(spaceId);
+            picture.setPubOnly(0);
         }
         return picture;
     }
@@ -252,7 +256,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
         Integer pubOnly = pictureQueryRequest.getPubOnly();
-
 
 
         if (StrUtil.isNotBlank(searchText)) {
@@ -390,6 +393,82 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return true;
     }
+
+    @Override
+    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditByBatchRequest), ErrorCode.PARAMS_ERROR);
+
+        Long spaceId = pictureEditByBatchRequest.getSpaceId();
+        List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
+        LoginUserVO user = userService.getLoginUserVO(userService.getLoginUserInfo(request));
+        String category = pictureEditByBatchRequest.getCategory();
+        List<String> tags = pictureEditByBatchRequest.getTags();
+        String nameRule = pictureEditByBatchRequest.getNameRule();
+        //校验参数
+        ThrowUtils.throwIf(CollUtil.isEmpty(pictureIdList) || user == null, ErrorCode.PARAMS_ERROR);
+        //校验空间操作权限
+        if (spaceId != null) {
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(!space.getUserId().equals(user.getId()), ErrorCode.NO_AUTH_ERROR, "无权限操作该空间");
+        }
+
+        List<Picture> pictureList = this.lambdaQuery()
+                .select(Picture::getId)
+                .in(Picture::getId, pictureIdList)
+                .list();
+        fillPictureWithNameRule(pictureList, nameRule);
+
+        ThrowUtils.throwIf(CollUtil.isEmpty(pictureList), ErrorCode.NOT_FOUND_ERROR, "没有找到要编辑的图片");
+
+        /*
+          前方高能 streamAPI + CompletableFuture + spring事务处理
+          设计思路:  事务不能跨线程生效，每个线程只能管理自己开启的事务。
+                    如果用线程池并发处理，每个线程内的数据库操作要么单独加事务，要么主线程收集结果后统一处理。
+                    因此主线程分批处理（每批用事务），或每个线程内单独加事务。
+
+          stream把要编辑的图片列表一个一个转换成CompletableFuture任务，
+          批量编辑图片,使用CompletableFuture异步执行
+          每个图片的编辑操作都在一个独立的线程中执行
+          每一个图片的编辑操作都使用事务处理
+         */
+        CompletableFuture<?>[] futures = pictureList.stream()
+                .map(picture -> CompletableFuture.runAsync(() -> transactionTemplate.execute(status -> {
+                    if (StrUtil.isNotBlank(category)) {
+                        picture.setCategory(category);
+                    }
+                    if (CollUtil.isNotEmpty(tags)) {
+                        picture.setTags(JSONUtil.toJsonStr(tags));
+                    }
+                    boolean result = this.updateById(picture);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量编辑图片失败");
+                    return null;
+                }), threadPoolTaskExecutor)).toArray(CompletableFuture[]::new);
+
+        CompletableFuture.allOf(futures).join();
+    }
+
+    /**
+     * nameRule 格式：图片{序号}
+     *
+     * @param pictureList 图片列表
+     * @param nameRule    名称规则
+     */
+    private void fillPictureWithNameRule(List<Picture> pictureList, String nameRule) {
+        if (CollUtil.isEmpty(pictureList) || StrUtil.isBlank(nameRule)) {
+            return;
+        }
+        long count = 1;
+        try {
+            for (Picture picture : pictureList) {
+                String pictureName = nameRule.replaceAll("\\{序号}", String.valueOf(count++));
+                picture.setName(pictureName);
+            }
+        } catch (Exception e) {
+            log.error("名称解析错误", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "名称解析错误");
+        }
+    }
+
 
     @Override
     public boolean deletePicture(DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){

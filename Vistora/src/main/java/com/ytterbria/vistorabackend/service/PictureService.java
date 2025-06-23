@@ -59,6 +59,14 @@ public interface PictureService extends IService<Picture> {
      */
     Page<PictureVO> getPictureVOPage(Page<Picture> picturePage);
 
+    /**
+     * 批量编辑图片
+     *
+     * @param pictureEditByBatchRequest 批量编辑请求实体
+     * @param request                   HttpServletRequest
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request);
+
     boolean editPicture(PictureEditRequest pictureEditRequest,HttpServletRequest request);
 
     boolean updatePicture(PictureUpdateRequest pictureUpdateRequest,HttpServletRequest request);

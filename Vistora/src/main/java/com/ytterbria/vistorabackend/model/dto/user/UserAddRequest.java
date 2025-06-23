@@ -2,12 +2,14 @@ package com.ytterbria.vistorabackend.model.dto.user;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 //用户添加请求参数
 @Data
 public class UserAddRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -6737548619053266893L;
 
     /**

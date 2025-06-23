@@ -6,19 +6,13 @@ import com.qcloud.cos.utils.IOUtils;
 import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
-import com.ytterbria.vistorabackend.common.response.BaseResponse;
-import com.ytterbria.vistorabackend.common.response.ResultUtils;
 import com.ytterbria.vistorabackend.manager.CosManager;
-import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.File;
 import java.io.IOException;
 
 @RestController
@@ -53,21 +47,5 @@ public class FileController {
                 cosObjectInput.close();
             }
         }
-    }
-
-    @PutMapping("/upload")
-    @AuthCheck(mustRole="admin")
-    @SneakyThrows
-    public BaseResponse<String> testUploadFile(@RequestParam MultipartFile multipartFile){
-
-        String filename = multipartFile.getOriginalFilename();
-        String filepath = String.format("/test/%s",filename);
-        File file = File.createTempFile(filepath, null);
-
-        multipartFile.transferTo(file);//将文件写入到临时文件中
-
-        cosManager.putObject(filepath, file);
-
-        return ResultUtils.success(filepath);
     }
 }

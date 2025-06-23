@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@MapperScan("com.ytterbria.vistorabackend.mapper")
 public class MyBatisPlusConfig {
 
     /**

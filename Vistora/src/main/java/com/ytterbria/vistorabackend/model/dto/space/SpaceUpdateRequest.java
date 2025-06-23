@@ -2,6 +2,7 @@ package com.ytterbria.vistorabackend.model.dto.space;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
@@ -35,6 +36,7 @@ public class SpaceUpdateRequest implements Serializable {
     /**
      * 序列化ID
      */
+    @Serial
     private static final long serialVersionUID = 3520326992887488540L;
 
 }

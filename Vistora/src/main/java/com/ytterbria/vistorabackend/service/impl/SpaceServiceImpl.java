@@ -78,6 +78,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     }
 
     @Override
+    public void checkSpaceAuth(Space space, User loginUser) {
+        ThrowUtils.throwIf(ObjUtil.isNull(loginUser), ErrorCode.NOT_LOGIN_ERROR, "用户未登录或空间不存在");
+        ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
+    }
+
+    @Override
     public boolean updateSpace(SpaceUpdateRequest spaceUpdateRequest){
         Space space = new Space();
         BeanUtils.copyProperties(spaceUpdateRequest,space);

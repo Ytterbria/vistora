@@ -2,11 +2,13 @@ package com.ytterbria.vistorabackend.model.dto.picture;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
 public class PictureReviewRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 3057501806262291588L;
 
     /**

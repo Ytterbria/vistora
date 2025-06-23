@@ -2,10 +2,12 @@ package com.ytterbria.vistorabackend.model.dto.user;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 @Data
 public class UserUpdateRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -1751257117084609225L;
 
     /**

@@ -276,6 +276,24 @@ public class PictureController {
 
          return ResultUtils.success(pictureService.editPicture(pictureEditRequest,httpServletRequest));
     }
+
+    /**
+     * 批量编辑图片
+     * 该方法用于批量编辑图片信息，仅限于管理员角色的用户使用
+     *
+     * @param pictureEditByBatchRequest 包含批量编辑所需信息的请求对象，如图片ID列表和编辑内容
+     * @param httpServletRequest        HTTP请求对象，用于获取当前登录用户信息
+     * @return 返回一个表示操作成功的布尔值，true表示成功
+     */
+    @PostMapping("/edit/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest,
+                                                    HttpServletRequest httpServletRequest) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditByBatchRequest), ErrorCode.PARAMS_ERROR);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, httpServletRequest);
+        return ResultUtils.success(true);
+    }
+
     /**
      * 处理图片审核请求
      * 该方法用于对上传的图片进行审核操作，仅限于管理员角色的用户使用

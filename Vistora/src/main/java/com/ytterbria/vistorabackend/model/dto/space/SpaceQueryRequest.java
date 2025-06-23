@@ -4,6 +4,7 @@ import com.ytterbria.vistorabackend.common.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @EqualsAndHashCode(callSuper = true)
@@ -30,5 +31,6 @@ public class SpaceQueryRequest extends PageRequest implements Serializable {
      */
     private Integer spaceLevel;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 }

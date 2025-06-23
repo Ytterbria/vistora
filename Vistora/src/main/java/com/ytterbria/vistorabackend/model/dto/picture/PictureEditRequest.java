@@ -2,6 +2,7 @@ package com.ytterbria.vistorabackend.model.dto.picture;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -11,6 +12,9 @@ import java.util.List;
 @Data
 public class PictureEditRequest implements Serializable {
 
+
+    @Serial
+    private static final long serialVersionUID = -6600530922289508190L;
     /**
      * id
      */
@@ -36,5 +40,4 @@ public class PictureEditRequest implements Serializable {
      */
     private List<String> tags;
 
-    private static final long serialVersionUID = 1L;
 }

@@ -4,6 +4,7 @@ import com.ytterbria.vistorabackend.common.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class PictureQueryRequest extends PageRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 3250300459708804244L;
 
     private Long id;

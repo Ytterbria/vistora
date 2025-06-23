@@ -19,7 +19,15 @@ public interface SpaceService extends IService<Space> {
       */
      void validSpace(Space space,boolean intention);
 
-     /**
+    /**
+     * 校验空间权限
+     *
+     * @param space     空间实体
+     * @param loginUser 登录用户
+     */
+    void checkSpaceAuth(Space space, User loginUser);
+
+    /**
       * 根据空间等级填充空间信息
       * @param space 空间实体
       */

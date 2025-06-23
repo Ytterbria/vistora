@@ -5,13 +5,59 @@
         <a-row :gutter="[16, 16]">
           <!-- 图片展示区 -->
           <a-col :xs="24" :md="16" :xl="18">
-            <a-card>
-              <a-image
-                :src="picture.url"
-                :alt="picture.name"
-                :preview="false"
-                style="object-fit: contain; max-height: 680px"
-              />
+            <a-card class="preview-card" body-style="padding:0;">
+              <div
+                class="image-container"
+                @mouseenter="showActions = true"
+                @mouseleave="showActions = false"
+              >
+                <a-image
+                  :src="picture.url"
+                  :alt="picture.name"
+                  :preview="false"
+                  style="object-fit: contain; max-height: 680px; width: 100%; background: #f6f8fa"
+                />
+                <transition name="fade">
+                  <div v-if="canEdit && showActions" class="image-action-bar">
+                    <a-tooltip title="编辑图片">
+                      <a-button type="text" shape="circle" class="action-btn" @click="handleEdit">
+                        <EditOutlined />
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="裁剪图片">
+                      <a-button
+                        type="text"
+                        shape="circle"
+                        class="action-btn"
+                        @click="handleCropImage"
+                      >
+                        <ToolOutlined />
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="删除图片">
+                      <a-button
+                        type="text"
+                        shape="circle"
+                        danger
+                        class="action-btn"
+                        @click="handleDeleteConfirm"
+                      >
+                        <DeleteOutlined />
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="免费下载">
+                      <a-button
+                        type="text"
+                        shape="circle"
+                        class="action-btn"
+                        @click="handleDownload"
+                      >
+                        <DownloadOutlined />
+                      </a-button>
+                    </a-tooltip>
+                  </div>
+                </transition>
+              </div>
             </a-card>
           </a-col>
 
@@ -89,29 +135,19 @@
                 </div>
               </div>
             </a-card>
-
-            <!-- 操作按钮 -->
-            <div v-if="canEdit" class="action-buttons">
-              <a-button type="primary" @click="handleEdit" class="edit-btn" shape="round">
-                <template #icon><EditOutlined /></template>
-                编辑图片
-              </a-button>
-              <a-button danger @click="handleDeleteConfirm" class="delete-btn" shape="round">
-                <template #icon><DeleteOutlined /></template>
-                删除图片
-              </a-button>
-              <a-button type="primary" shape="round" @click="handleDownload">
-                免费下载
-                <template #icon>
-                  <DownloadOutlined />
-                </template>
-              </a-button>
-            </div>
           </a-col>
         </a-row>
       </template>
     </a-spin>
   </div>
+
+  <PictureEditorModal
+    v-model:visible="showEditorModal"
+    :imageUrl="editorImageUrl"
+    :pictureId="editorPictureId"
+    :spaceId="editorSpaceId"
+    @success="handleEditorSuccess"
+  />
 </template>
 
 <script setup lang="ts">
@@ -128,12 +164,31 @@ import {
   DownloadOutlined,
 } from '@ant-design/icons-vue'
 import { downloadImage } from '@/utils'
+import PictureEditorModal from '@/components/PictureEditorModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useLoginUserStore()
 const loading = ref(true)
 const picture = ref<API.PictureVO>({})
+
+const showEditorModal = ref(false)
+const editorImageUrl = ref('')
+const editorPictureId = ref<number | undefined>(undefined)
+const editorSpaceId = ref<number | undefined>(undefined)
+const showActions = ref(false)
+
+function handleCropImage() {
+  editorImageUrl.value = picture.value?.url || ''
+  editorPictureId.value = picture.value?.id
+  editorSpaceId.value = picture.value?.spaceId
+  showEditorModal.value = true
+}
+
+function handleEditorSuccess(newPicture) {
+  // 重新加载图片详情
+  fetchPictureDetail()
+}
 
 // 格式化工具函数
 const formatSize = (bytes?: number) => {
@@ -356,16 +411,52 @@ body {
     }
   }
 
-  .action-buttons {
-    margin-top: 32px;
-    display: grid;
-    gap: 16px;
+  .image-container {
+    position: relative;
+    width: 100%;
 
-    button {
-      height: 42px;
-      font-weight: 500;
-      transition: all 0.2s ease;
+    .image-action-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 18px;
+      background: rgba(30, 41, 59, 0.28); // 透明度更高更浅
+      border-radius: 32px;
+      padding: 10px 28px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      align-items: center;
+      z-index: 10;
+      transition: background 0.2s;
+
+      .action-btn {
+        color: #fff;
+        font-size: 22px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        transition: color 0.2s;
+      }
+
+      .action-btn:hover {
+        color: #409eff;
+        background: rgba(255, 255, 255, 0.12);
+      }
     }
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.2s;
+  }
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+  .fade-enter-to,
+  .fade-leave-from {
+    opacity: 1;
   }
 }
 

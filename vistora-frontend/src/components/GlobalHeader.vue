@@ -84,7 +84,11 @@ const items = ref<MenuProps['items']>([
     label: '空间管理',
     title: '空间管理',
   },
-
+  {
+    key: '/space_analyze',
+    label: '空间分析',
+    title: '空间分析',
+  },
   {
     key: 'others',
     label: h('a', { href: 'https://github.com/Ytterbria', target: '_blank' }, '其他项目'),

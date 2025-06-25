@@ -9,6 +9,7 @@ import PictureDetailPage from '@/pages/picture/PictureDetailPage.vue'
 import SpaceManagePage from '@/pages/space/SpaceManagePage.vue'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage.vue'
 import MySpacePage from '@/pages/space/MySpacePage.vue'
+import SpaceAnalyzePage from '@/pages/space/SpaceAnalyzePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,6 +65,11 @@ const router = createRouter({
       path: '/admin/spaceManage',
       name: '空间管理',
       component: SpaceManagePage,
+    },
+    {
+      path: '/space_analyze',
+      name: '空间分析',
+      component: SpaceAnalyzePage,
     },
   ],
 })

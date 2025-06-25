@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FilePictureUpload from '@/components/FilePictureUpload.vue'
+import FilePictureUpload from '@/components/upload/FilePictureUpload.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   editPictureUsingPost,
@@ -8,8 +8,8 @@ import {
 } from '@/api/pictureController.ts'
 import { message } from 'ant-design-vue'
 import { useRoute, useRouter } from 'vue-router'
-import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
-import BatchPictureUpload from '@/components/BatchPictureUpload.vue'
+import UrlPictureUpload from '@/components/upload/UrlPictureUpload.vue'
+import BatchPictureUpload from '@/components/upload/BatchPictureUpload.vue'
 
 const picture = ref<API.PictureVO>()
 const pictureForm = reactive<API.PictureEditRequest>({})

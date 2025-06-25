@@ -5,15 +5,39 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseCreateImageTaskResponse_ = {
+    code?: number
+    data?: CreateImageTaskResponse
+    message?: string
+  }
+
   type BaseResponseInt_ = {
     code?: number
     data?: number
     message?: string
   }
 
+  type BaseResponseListSpaceCategoryAnalyzeResponse_ = {
+    code?: number
+    data?: SpaceCategoryAnalyzeResponse[]
+    message?: string
+  }
+
   type BaseResponseListSpaceLevel_ = {
     code?: number
     data?: SpaceLevel[]
+    message?: string
+  }
+
+  type BaseResponseListSpaceTagAnalyzeResponse_ = {
+    code?: number
+    data?: SpaceTagAnalyzeResponse[]
+    message?: string
+  }
+
+  type BaseResponseListSpaceUserAnalyzeResponse_ = {
+    code?: number
+    data?: SpaceUserAnalyzeResponse[]
     message?: string
   }
 
@@ -71,15 +95,21 @@ declare namespace API {
     message?: string
   }
 
-  type BaseResponseSpaceVO_ = {
+  type BaseResponseQueryImageTaskResponse_ = {
     code?: number
-    data?: SpaceVO
+    data?: QueryImageTaskResponse
     message?: string
   }
 
-  type BaseResponseString_ = {
+  type BaseResponseSpaceUsageAnalyzeResponse_ = {
     code?: number
-    data?: string
+    data?: SpaceUsageAnalyzeResponse
+    message?: string
+  }
+
+  type BaseResponseSpaceVO_ = {
+    code?: number
+    data?: SpaceVO
     message?: string
   }
 
@@ -93,6 +123,16 @@ declare namespace API {
     code?: number
     data?: UserManageVO
     message?: string
+  }
+
+  type CreateImageTaskRequest = {
+    prompt?: string
+    userId?: number
+  }
+
+  type CreateImageTaskResponse = {
+    status?: string
+    taskId?: string
   }
 
   type DeleteRequest = {
@@ -204,6 +244,7 @@ declare namespace API {
     picScale?: number
     picSize?: number
     picWidth?: number
+    pubOnly?: number
     reviewMessage?: string
     reviewStatus?: number
     reviewTime?: string
@@ -306,9 +347,32 @@ declare namespace API {
     userId?: number
   }
 
+  type QueryImageTaskResponse = {
+    imageUrls?: string[]
+    status?: string
+    taskId?: string
+  }
+
+  type queryImageTaskUsingGETParams = {
+    /** taskId */
+    taskId: string
+  }
+
   type SpaceAddRequest = {
     spaceLevel?: number
     spaceName?: string
+  }
+
+  type SpaceCategoryAnalyzeRequest = {
+    queryAll?: boolean
+    queryPub?: boolean
+    spaceId?: number
+  }
+
+  type SpaceCategoryAnalyzeResponse = {
+    category?: string
+    count?: number
+    totalSize?: number
   }
 
   type SpaceLevel = {
@@ -329,12 +393,51 @@ declare namespace API {
     userId?: number
   }
 
+  type SpaceTagAnalyzeRequest = {
+    queryAll?: boolean
+    queryPub?: boolean
+    spaceId?: number
+  }
+
+  type SpaceTagAnalyzeResponse = {
+    count?: number
+    tag?: string
+  }
+
   type SpaceUpdateRequest = {
     id?: number
     maxCount?: number
     maxSize?: number
     spaceLevel?: number
     spaceName?: string
+  }
+
+  type SpaceUsageAnalyzeRequest = {
+    queryAll?: boolean
+    queryPub?: boolean
+    spaceId?: number
+  }
+
+  type SpaceUsageAnalyzeResponse = {
+    countUsageRatio?: number
+    maxCount?: number
+    maxSize?: number
+    sizeUsageRatio?: number
+    usedCount?: number
+    usedSize?: number
+  }
+
+  type SpaceUserAnalyzeRequest = {
+    queryAll?: boolean
+    queryPub?: boolean
+    spaceId?: number
+    timeDimension?: string
+    userId?: number
+  }
+
+  type SpaceUserAnalyzeResponse = {
+    count?: number
+    period?: string
   }
 
   type SpaceVO = {

@@ -5,10 +5,14 @@
 import * as fileController from './fileController'
 import * as pictureController from './pictureController'
 import * as spaceController from './spaceController'
+import * as spaceAnalyzeController from './spaceAnalyzeController'
 import * as userController from './userController'
+import * as wanxController from './wanxController'
 export default {
   fileController,
   pictureController,
   spaceController,
+  spaceAnalyzeController,
   userController,
+  wanxController,
 }

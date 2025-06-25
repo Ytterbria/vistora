@@ -5,10 +5,7 @@ import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.response.BaseResponse;
 import com.ytterbria.vistorabackend.common.response.ResultUtils;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceCategoryAnalyzeResponse;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceUsageAnalyzeResponse;
+import com.ytterbria.vistorabackend.model.dto.space.analyze.*;
 import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.service.SpaceAnalyzeService;
 import com.ytterbria.vistorabackend.service.UserService;
@@ -42,24 +39,49 @@ public class SpaceAnalyzeController {
             @RequestBody SpaceUsageAnalyzeRequest spaceUsageAnalyzeRequest,
             HttpServletRequest request
             ) {
-        ThrowUtils.throwIf(ObjUtil.isNull(spaceUsageAnalyzeRequest), ErrorCode.PARAMS_ERROR);
         // 获取当前登录用户
         User loginUser = userService.getLoginUserInfo(request);
         SpaceUsageAnalyzeResponse spaceUsageAnalyzeResponse = spaceAnalyzeService.getSpaceUsageAnalyze(spaceUsageAnalyzeRequest, loginUser);
         return ResultUtils.success(spaceUsageAnalyzeResponse);
     }
 
+    /**
+     * 获取空间分类分析 获得某个分类的图片数量,占用大小
+     * @param spaceCategoryAnalyzeRequest 请求参数
+     * @param request HttpServletRequest
+     * @return BaseResponse<List<SpaceCategoryAnalyzeResponse>>
+     */
     @PostMapping("/category")
     public BaseResponse<List<SpaceCategoryAnalyzeResponse>> getSpaceCategoryAnalyze(
             @RequestBody SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest,
             HttpServletRequest request
             ){
-        ThrowUtils.throwIf(ObjUtil.isNull(spaceCategoryAnalyzeRequest), ErrorCode.PARAMS_ERROR);
 
         // 获取当前登录用户
         User loginUser = userService.getLoginUserInfo(request);
 
         return ResultUtils.success(spaceAnalyzeService.getSpaceCategoryAnalyze(spaceCategoryAnalyzeRequest,loginUser));
+    }
+
+    /**
+     * 获取空间标签分析 获得每个标签对应的数量,用于生成词云图
+     * @param spaceTagAnalyzeRequest 请求参数
+     * @param request HttpServletRequest
+     * @return BaseResponse<List<SpaceTagAnalyzeResponse>>
+     */
+    @PostMapping("/tag")
+    public BaseResponse<List<SpaceTagAnalyzeResponse>> getSpaceTagAnalyze(@RequestBody SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, HttpServletRequest request) {
+        User loginUser = userService.getLoginUserInfo(request);
+        List<SpaceTagAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceTagAnalyze(spaceTagAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+
+    @PostMapping("/user")
+    public BaseResponse<List<SpaceUserAnalyzeResponse>> getSpaceUserAnalyze(@RequestBody SpaceUserAnalyzeRequest spaceUserAnalyzeRequest,HttpServletRequest request){
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUserInfo(request);
+        List<SpaceUserAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceUserAnalyze(spaceUserAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
     }
 
 }

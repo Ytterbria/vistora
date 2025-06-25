@@ -17,14 +17,6 @@ import java.util.Map;
 * @Entity com.ytterbria.vistorabackend.model.entity.Picture
 */
 public interface PictureMapper extends BaseMapper<Picture> {
-
-    @Results({
-            @Result(property = "category", column = "category"),
-            @Result(property = "count", column = "count"),
-            @Result(property = "totalSize", column = "totalSize")
-    })
-    @Select("SELECT category as category,COUNT(*) as count from picture group by category")
-    List<Map<String, Object>> getCategoryAnalyze();
 }
 
 

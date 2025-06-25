@@ -2,6 +2,7 @@ package com.ytterbria.vistorabackend.service.impl;
 
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
@@ -128,9 +129,19 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
     public List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest request,User loginUser){
         ThrowUtils.throwIf(ObjUtil.isNull(request),ErrorCode.PARAMS_ERROR);
 
+        // 检查权限
         checkSpaceAnalyzeAuth(request,loginUser);
 
-        return pictureMapper.getCategoryAnalyze().stream()
+        // 构建查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        fillAnalyzeQueryWrapper(request,queryWrapper);
+
+        queryWrapper.select("category as category",
+                "COUNT(*) AS count",
+                "SUM(picSize) AS totalSize")
+                    .groupBy("category");
+
+        return pictureMapper.selectMaps(queryWrapper).stream()
                 .map(res -> {
                     String category = res.get("category") != null ? res.get("category").toString() : "未分类";
                     Long count = ((Number) res.get("count")).longValue();
@@ -139,5 +150,65 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 }).toList();
     }
 
+    @Override
+    public List<SpaceTagAnalyzeResponse> getSpaceTagAnalyze(SpaceTagAnalyzeRequest request,User loginUser){
+        ThrowUtils.throwIf(ObjUtil.isNull(request),ErrorCode.PARAMS_ERROR);
+        // 检查权限
+        checkSpaceAnalyzeAuth(request,loginUser);
 
+        // 构建查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        fillAnalyzeQueryWrapper(request,queryWrapper);
+
+        //查询图片标签统计
+        queryWrapper.select("tags");
+        List<String> tagsList = pictureMapper.selectObjs(queryWrapper)
+                .stream()
+                .filter(ObjUtil::isNotNull)
+                .map(Object::toString)
+                .toList();
+
+        Map<String,Long> tagCountMap = tagsList.stream()
+                .flatMap(tag -> JSONUtil.toList(tag,String.class).stream())
+                .collect(Collectors.groupingBy(tag->tag,Collectors.counting()));
+
+        return tagCountMap.entrySet().stream()
+                .sorted((e1,e2) -> Long.compare(e2.getValue(),e1.getValue()))
+                .map(entry -> new SpaceTagAnalyzeResponse(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    @Override
+    public List<SpaceUserAnalyzeResponse> getSpaceUserAnalyze(SpaceUserAnalyzeRequest request,User loginUser){
+        ThrowUtils.throwIf(ObjUtil.isNull(request),ErrorCode.PARAMS_ERROR);
+
+        //检查权限
+        checkSpaceAnalyzeAuth(request,loginUser);
+
+        // 构建查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        Long userId = request.getUserId();
+        queryWrapper.eq(ObjUtil.isNotNull(userId),"userId",userId);
+        fillAnalyzeQueryWrapper(request,queryWrapper);
+
+        //分析维度
+        String timeDimension = request.getTimeDimension();
+        switch(timeDimension){
+            case "day" -> queryWrapper.select("DATE_FORMAT(createTime,'%Y-%m-%d') AS period,COUNT(*) AS count");
+            case "week" -> queryWrapper.select("YEARWEEK(createTime) AS period","COUNT(*) AS count");
+            case "month" -> queryWrapper.select("MONTH(createTime) AS period","COUNT(*) AS count");
+            default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的时间维度");
+        }
+
+        queryWrapper.groupBy("period").orderByAsc("count");
+
+        List<Map<String,Object>> queryResult = pictureMapper.selectMaps(queryWrapper);
+
+        return queryResult.stream()
+                .map(res ->{
+                    String period = res.get("period").toString();
+                    Long count = ((Number) res.get("count")).longValue();
+                    return new SpaceUserAnalyzeResponse(period,count);
+                }).toList();
+    }
 }

@@ -2,10 +2,7 @@ package com.ytterbria.vistorabackend.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceCategoryAnalyzeResponse;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
-import com.ytterbria.vistorabackend.model.dto.space.analyze.SpaceUsageAnalyzeResponse;
+import com.ytterbria.vistorabackend.model.dto.space.analyze.*;
 import com.ytterbria.vistorabackend.model.entity.Space;
 import com.ytterbria.vistorabackend.model.entity.User;
 
@@ -17,4 +14,7 @@ public interface SpaceAnalyzeService extends IService<Space> {
 
     List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, User loginUser);
 
+    List<SpaceTagAnalyzeResponse> getSpaceTagAnalyze(SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, User loginUser);
+
+    List<SpaceUserAnalyzeResponse> getSpaceUserAnalyze(SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, User loginUser);
 }

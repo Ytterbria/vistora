@@ -4,10 +4,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
+import java.io.Serializable;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SpaceUsageAnalyzeRequest extends SpaceAnalyzeRequest{
+public class SpaceTagAnalyzeRequest extends SpaceAnalyzeRequest implements Serializable {
     @Serial
-    private static final long serialVersionUID = 4619947284601805140L;
+    private static final long serialVersionUID = 2367947030059402086L;
 }

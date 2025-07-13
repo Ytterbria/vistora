@@ -10,6 +10,8 @@ import com.ytterbria.vistorabackend.model.entity.Space;
 import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.SpaceVO;
 
+import javax.servlet.http.HttpServletRequest;
+
 
 public interface SpaceService extends IService<Space> {
      /**
@@ -41,6 +43,8 @@ public interface SpaceService extends IService<Space> {
      boolean updateSpace(SpaceUpdateRequest spaceUpdateRequest);
 
      Page<SpaceVO> getSpaceVOPage(Page<Space> page);
+
+     SpaceVO getSpaceVOById(long id, HttpServletRequest request);
 
      SpaceVO getSpaceVO(Space space);
 

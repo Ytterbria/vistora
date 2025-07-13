@@ -67,13 +67,15 @@ public interface PictureService extends IService<Picture> {
      */
     void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request);
 
+    PictureVO getPictureVOById(long id, HttpServletRequest request);
+
     boolean editPicture(PictureEditRequest pictureEditRequest,HttpServletRequest request);
 
     boolean updatePicture(PictureUpdateRequest pictureUpdateRequest,HttpServletRequest request);
 
     void validatePicture(Picture picture);
 
-    void checkPictureAuth(User loginUer, Picture picture);
+
 
     void reviewPicture(PictureReviewRequest pictureReviewRequest, User loginUser);
 

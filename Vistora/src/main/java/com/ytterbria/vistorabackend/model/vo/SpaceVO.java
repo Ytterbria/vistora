@@ -4,11 +4,17 @@ import com.ytterbria.vistorabackend.model.entity.Space;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class SpaceVO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 2240592855542403121L;
+
     /**
      * id
      */
@@ -23,6 +29,11 @@ public class SpaceVO implements Serializable {
      * 空间级别：0-普通版 1-专业版 2-旗舰版
      */
     private Integer spaceLevel;
+
+    /**
+     * 空间类型: 0-个人空间 1-团队空间
+     */
+    private Integer spaceType;
 
     /**
      * 空间图片的最大总大小
@@ -69,7 +80,12 @@ public class SpaceVO implements Serializable {
      */
     private LoginUserVO user;
 
-    private static final long serialVersionUID = 1L;
+    /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
+
+
 
     /**
      * 封装类转对象

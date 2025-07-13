@@ -1,7 +1,7 @@
 package com.ytterbria.vistorabackend.controller;
 
 import cn.hutool.core.util.ObjUtil;
-import cn.hutool.http.HttpRequest;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
@@ -18,10 +18,7 @@ import com.ytterbria.vistorabackend.model.entity.Space;
 import com.ytterbria.vistorabackend.model.vo.SpaceVO;
 import com.ytterbria.vistorabackend.service.SpaceService;
 import com.ytterbria.vistorabackend.service.UserService;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -59,8 +56,7 @@ public class SpaceController {
     }
 
 
-    @RequestMapping("/add")
-    @AuthCheck(mustRole = "admin")
+    @PostMapping("/add")
     public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(spaceAddRequest), ErrorCode.PARAMS_ERROR);
 
@@ -79,12 +75,19 @@ public class SpaceController {
         return ResultUtils.success(result);
     }
 
-    @RequestMapping("/get/vo")
-    @AuthCheck(mustRole = "admin")
-    public BaseResponse<SpaceVO> getSpaceVOById(long id){
-        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+    @GetMapping("/get/{userId}")
+    public BaseResponse<SpaceVO> getSpaceByUserId(@PathVariable long userId) {
+        Space space = spaceService.getOne(new QueryWrapper<Space>().eq("userId", userId));
+        ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
 
-        SpaceVO spaceVO = spaceService.getSpaceVO(spaceService.getById(id));
+        SpaceVO spaceVO = spaceService.getSpaceVO(space);
+
+        return ResultUtils.success(spaceVO);
+    }
+
+    @RequestMapping("/get/vo")
+    public BaseResponse<SpaceVO> getSpaceVOById(long id,HttpServletRequest request){
+        SpaceVO spaceVO = spaceService.getSpaceVOById(id, request);
 
         return ResultUtils.success(spaceVO);
     }

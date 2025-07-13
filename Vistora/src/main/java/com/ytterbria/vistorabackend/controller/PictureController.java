@@ -10,13 +10,13 @@ import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
-import com.ytterbria.vistorabackend.common.request.PageRequest;
 import com.ytterbria.vistorabackend.common.response.BaseResponse;
 import com.ytterbria.vistorabackend.common.response.ResultUtils;
-import com.ytterbria.vistorabackend.config.CosClientConfig;
+import com.ytterbria.vistorabackend.constant.SpaceUserPermissionConstant;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
-import com.ytterbria.vistorabackend.manager.CosManager;
+import com.ytterbria.vistorabackend.manager.auth.StpKit;
+import com.ytterbria.vistorabackend.manager.auth.annotation.SaSpaceCheckPermission;
 import com.ytterbria.vistorabackend.model.dto.picture.*;
 import com.ytterbria.vistorabackend.model.entity.Picture;
 import com.ytterbria.vistorabackend.model.entity.Space;
@@ -26,7 +26,6 @@ import com.ytterbria.vistorabackend.model.vo.PictureVO;
 import com.ytterbria.vistorabackend.service.PictureService;
 import com.ytterbria.vistorabackend.service.SpaceService;
 import com.ytterbria.vistorabackend.service.UserService;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -37,7 +36,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -56,6 +54,7 @@ public class PictureController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+
     /**
      * 本地缓存
      */
@@ -71,6 +70,7 @@ public class PictureController {
      * @param httpServletRequest http请求
      */
     @PostMapping("/upload")
+    @SaSpaceCheckPermission(value= SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file")MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -84,6 +84,7 @@ public class PictureController {
     }
 
     @PostMapping("/upload/url")
+    @SaSpaceCheckPermission(value= SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest httpServletRequest
@@ -118,6 +119,7 @@ public class PictureController {
      * @param httpServletRequest http请求
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value= SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
 
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest), ErrorCode.PARAMS_ERROR);
@@ -160,12 +162,8 @@ public class PictureController {
       */
     @GetMapping("/get/vo")
     public BaseResponse<PictureVO> getPictureVOById(long id,HttpServletRequest httpServletRequest){
-         ThrowUtils.throwIf(id <= 0,ErrorCode.PARAMS_ERROR);
-         //查询数据库
-         Picture picture = pictureService.getById(id);
-         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.NOT_FOUND_ERROR);
-         //数据转换
-         PictureVO pictureVO = pictureService.getPictureVO(picture,httpServletRequest);
+         PictureVO pictureVO = pictureService.getPictureVOById(id,httpServletRequest);
+
          return ResultUtils.success(pictureVO);
     }
 
@@ -174,7 +172,7 @@ public class PictureController {
      */
     @PostMapping("/list/page")
     @AuthCheck(mustRole = "admin")
-    public BaseResponse<Page<Picture>> listPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest,HttpServletRequest httpServletRequest){
+    public BaseResponse<Page<Picture>> listPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest){
          long current = pictureQueryRequest.getCurrent();
          long size = pictureQueryRequest.getPageSize();
          ThrowUtils.throwIf(current <= 0 || size <= 0, ErrorCode.PARAMS_ERROR);
@@ -199,10 +197,8 @@ public class PictureController {
         //空间权限校验
         Long spaceId = pictureQueryRequest.getSpaceId();
         if (spaceId != null) {
-            User loginUser = userService.getLoginUserInfo(httpServletRequest);
-            Space space = spaceService.getById(spaceId);
-            ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "没有权限访问该空间");
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR, "没有权限访问该空间");
         } else {
             pictureQueryRequest.setReviewStatus(PictureReviewEnum.PASS.getValue());
             pictureQueryRequest.setPubOnly(1);
@@ -271,6 +267,7 @@ public class PictureController {
      * @return 返回一个包含布尔值的响应对象，表示图片是否编辑成功
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value= SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest,HttpServletRequest httpServletRequest){
          ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditRequest) || pictureEditRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
 

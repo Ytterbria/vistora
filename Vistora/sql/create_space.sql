@@ -17,3 +17,8 @@ create table if not exists space
     index idx_spaceName (spaceName),    -- 提升基于空间名称的查询性能
     index idx_spaceLevel (spaceLevel)   -- 提升基于空间级别的查询性能
 ) comment '空间' collate= utf8mb4_unicode_ci;   -- 设置表的字符集为 utf8mb4_unicode_ci
+
+alter table space
+    add column spaceType int default 0 not null comment '空间类型: 0-私有空间,1-团队空间';
+
+create index idx_spaceType on space (spaceType); -- 创建基于 spaceType 列的索引

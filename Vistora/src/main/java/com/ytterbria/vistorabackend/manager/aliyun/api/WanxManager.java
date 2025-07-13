@@ -1,15 +1,15 @@
-package com.ytterbria.vistorabackend.aliyun.api;
+package com.ytterbria.vistorabackend.manager.aliyun.api;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
-import com.ytterbria.vistorabackend.aliyun.dto.dash.DashScopeCreateRequest;
-import com.ytterbria.vistorabackend.aliyun.dto.dash.DashScopeCreateResponse;
-import com.ytterbria.vistorabackend.aliyun.dto.dash.DashScopeTaskResultResponse;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.CreateImageTaskRequest;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.CreateImageTaskResponse;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.QueryImageTaskResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.dash.DashScopeCreateRequest;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.dash.DashScopeCreateResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.dash.DashScopeTaskResultResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.CreateImageTaskRequest;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.CreateImageTaskResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.QueryImageTaskResponse;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import lombok.extern.slf4j.Slf4j;

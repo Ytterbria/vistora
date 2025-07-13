@@ -16,8 +16,11 @@ import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
+import com.ytterbria.vistorabackend.constant.SpaceUserPermissionConstant;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
 import com.ytterbria.vistorabackend.manager.CosManager;
+import com.ytterbria.vistorabackend.manager.auth.SpaceUserAuthManager;
+import com.ytterbria.vistorabackend.manager.auth.StpKit;
 import com.ytterbria.vistorabackend.manager.upload.FilePictureUpload;
 import com.ytterbria.vistorabackend.manager.upload.PictureUploadTemplate;
 import com.ytterbria.vistorabackend.manager.upload.UrlPictureUpload;
@@ -58,6 +61,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
@@ -101,7 +107,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (pictureId != null) {
             Picture oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(ObjUtil.isNull(oldPicture), ErrorCode.NOT_FOUND_ERROR, "图片不存在");
-            this.checkPictureAuth(loginUser, oldPicture);
             if (spaceId == null) {
                 if (oldPicture.getSpaceId() != null) {
                     spaceId = oldPicture.getSpaceId();
@@ -219,18 +224,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
-    public void checkPictureAuth(User loginUser, Picture picture) {
-        Long spaceId = picture.getSpaceId();
-        if (spaceId == null) {
-            //空间id为空,说明是公共图库,则本人或管理员可操作
-            ThrowUtils.throwIf(!loginUser.getId().equals(picture.getUserId()) && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
-        } else {
-            //空间id不为空,说明是私有图库,则本人可操作
-            ThrowUtils.throwIf(!loginUser.getId().equals(picture.getUserId()), ErrorCode.NO_AUTH_ERROR);
-        }
-    }
-
-    @Override
     public QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest) {
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
         if (pictureQueryRequest == null) {
@@ -300,11 +293,30 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             LoginUserVO userVO = userService.getLoginUserVO(user);
             pictureVO.setUser(userVO);
         }
+        return pictureVO;
+    }
+
+    @Override
+    public PictureVO getPictureVOById(long id, HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+        // 查询数据库
+        Picture picture = this.getById(id);
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 空间的图片，需要校验权限
+        Space space = null;
         Long spaceId = picture.getSpaceId();
         if (spaceId != null) {
-            User loginUser = userService.getLoginUserInfo(request);
-            this.checkPictureAuth(loginUser, picture);
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
         }
+        // 获取权限列表
+        User loginUser = userService.getLoginUserInfo(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        PictureVO pictureVO = this.getPictureVO(picture, request);
+        pictureVO.setPermissionList(permissionList);
+        // 获取封装类
         return pictureVO;
     }
 
@@ -360,7 +372,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         long id = pictureUpdateRequest.getId();
         Picture pictureToUpdate = this.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureToUpdate), ErrorCode.NOT_FOUND_ERROR);
-        this.checkPictureAuth(userService.getLoginUserInfo(request), pictureToUpdate);
 
         //操作数据库
         boolean result = this.updateById(picture);
@@ -384,7 +395,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         long id = pictureEditRequest.getId();
         Picture pictureToEdit = this.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureToEdit), ErrorCode.NOT_FOUND_ERROR);
-        this.checkPictureAuth(loginUser, pictureToEdit);
         //补充审核信息
         this.fillReviewParams(picture,loginUser);
 
@@ -474,15 +484,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     public boolean deletePicture(DeleteRequest deleteRequest,HttpServletRequest httpServletRequest){
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest) ||  deleteRequest.getId() == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
 
-        User loginUser = userService.getLoginUserInfo(httpServletRequest);
         //判断将要删除的图片是否存在
         long id = deleteRequest.getId();
         Picture pictureToDelete = this.getById(id);
         Long spaceId = pictureToDelete.getSpaceId();
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureToDelete), ErrorCode.NOT_FOUND_ERROR);
-
-        //判断用户是否有权限删除图片,仅本人或管理员可以删除
-        this.checkPictureAuth(loginUser, pictureToDelete);
 
         //事务处理,删除图片信息和更新空间信息
         transactionTemplate.execute(status -> {
@@ -559,7 +565,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public void fillReviewParams(Picture picture, User loginUser) {
-        if (userService.isAdmin(loginUser)){
+        if (userService.isAdmin(loginUser)) {
             picture.setReviewStatus(PictureReviewEnum.PASS.getValue());
             picture.setReviewerId(loginUser.getId());
             picture.setReviewTime(new Date());

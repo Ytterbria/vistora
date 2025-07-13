@@ -1,4 +1,4 @@
-package com.ytterbria.vistorabackend.aliyun.dto.dash;
+package com.ytterbria.vistorabackend.manager.aliyun.dto.dash;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

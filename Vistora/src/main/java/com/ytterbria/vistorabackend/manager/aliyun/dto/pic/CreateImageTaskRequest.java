@@ -1,4 +1,4 @@
-package com.ytterbria.vistorabackend.aliyun.dto.pic;
+package com.ytterbria.vistorabackend.manager.aliyun.dto.pic;
 
 import lombok.Data;
 

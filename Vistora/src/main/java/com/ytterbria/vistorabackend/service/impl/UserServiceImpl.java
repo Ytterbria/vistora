@@ -12,6 +12,7 @@ import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.constant.UserConstant;
 import com.ytterbria.vistorabackend.enums.UserRoleEnum;
+import com.ytterbria.vistorabackend.manager.auth.StpKit;
 import com.ytterbria.vistorabackend.model.dto.user.*;
 import com.ytterbria.vistorabackend.model.entity.User;
 import com.ytterbria.vistorabackend.model.vo.LoginUserVO;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
-
     @Override
     public boolean isAdmin(User user) {
         return user!= null && user.getUserRole().equals(UserRoleEnum.ADMIN.getValue());
@@ -78,6 +78,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!result){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"注册失败,数据库错误");
         }
+
         return user.getId();
     }
 
@@ -112,7 +113,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         //登录成功,记录登录状态,将它保存在session中
         httpServletRequest.getSession().setAttribute(UserConstant.USER_LOGIN_STATUS,user);
-
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATUS,user);
         //返回登录用户信息
         return this.getLoginUserVO(user);
     }
@@ -169,6 +171,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 .like(StrUtil.isNotBlank(userProfile),"userProfile",userProfile)
                 .orderBy(StrUtil.isNotEmpty(sortField),sortOrder.equals("ascend"),sortField);
     }
+
 
     @Override
     public User getLoginUserInfo(HttpServletRequest httpServletRequest) {

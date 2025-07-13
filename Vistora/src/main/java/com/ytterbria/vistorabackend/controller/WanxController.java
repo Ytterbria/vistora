@@ -1,10 +1,10 @@
 package com.ytterbria.vistorabackend.controller;
 
 import cn.hutool.core.util.ObjUtil;
-import com.ytterbria.vistorabackend.aliyun.api.WanxManager;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.CreateImageTaskRequest;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.CreateImageTaskResponse;
-import com.ytterbria.vistorabackend.aliyun.dto.pic.QueryImageTaskResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.api.WanxManager;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.CreateImageTaskRequest;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.CreateImageTaskResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.pic.QueryImageTaskResponse;
 import com.ytterbria.vistorabackend.annotation.AuthCheck;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import com.ytterbria.vistorabackend.common.exception.ThrowUtils;

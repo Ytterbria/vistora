@@ -1,4 +1,4 @@
-package com.ytterbria.vistorabackend.aliyun.dto.chat;
+package com.ytterbria.vistorabackend.manager.aliyun.dto.chat;
 
 import lombok.Data;
 

@@ -1,11 +1,11 @@
-package com.ytterbria.vistorabackend.aliyun.api;
+package com.ytterbria.vistorabackend.manager.aliyun.api;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
-import com.ytterbria.vistorabackend.aliyun.dto.chat.QwenChatRequest;
-import com.ytterbria.vistorabackend.aliyun.dto.chat.QwenChatResponse;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.chat.QwenChatRequest;
+import com.ytterbria.vistorabackend.manager.aliyun.dto.chat.QwenChatResponse;
 import com.ytterbria.vistorabackend.common.exception.BusinessException;
 import com.ytterbria.vistorabackend.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;

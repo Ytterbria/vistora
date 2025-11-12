@@ -56,8 +56,14 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/space/:id',
-      name: '空间详情',
+      path: '/space/my/:id',
+      name: '个人空间详情',
+      component: MySpacePage,
+      props: true,
+    },
+    {
+      path: '/space/team/:id',
+      name: '团队空间详情',
       component: SpaceDetailPage,
       props: true,
     },
@@ -70,6 +76,11 @@ const router = createRouter({
       path: '/space_analyze',
       name: '空间分析',
       component: SpaceAnalyzePage,
+    },
+    {
+      path: '/space/create',
+      name: '创建空间',
+      component: () => import('@/pages/space/CreateSpacePage.vue'),
     },
   ],
 })

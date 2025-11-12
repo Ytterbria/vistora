@@ -119,7 +119,7 @@ import {
   deleteSpaceUsingPost,
 } from '@/api/spaceController.ts'
 import dayjs from 'dayjs'
-import { SPACE_LEVEL_MAP } from '../../constants/space.ts'
+import { SPACE_LEVEL_MAP } from '@/constants/space.ts'
 
 const columns = [
   { title: 'id', dataIndex: 'id', width: 80 },

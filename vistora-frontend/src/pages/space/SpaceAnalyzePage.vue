@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import SpaceCategoryAnalyzeChart from '@/components/analyze/SpaceCategoryAnalyzeChart.vue'
 import SpaceTagAnalyzeChart from '@/components/analyze/SpaceTagAnalyzeChart.vue'
 import SpaceUserAnalyzeChart from '@/components/analyze/SpaceUserAnalyzeChart.vue'
@@ -36,18 +36,29 @@ import {
 } from '@/api/spaceAnalyzeController'
 import { listSpaceUsingPost } from '@/api/spaceController'
 import { useLoginUserStore } from '@/stores/userLoginUserStore'
+import { message } from 'ant-design-vue'
 
 const categoryData = ref<API.SpaceCategoryAnalyzeResponse[]>([])
 const tagData = ref<API.SpaceTagAnalyzeResponse[]>([])
 const userData = ref<API.SpaceUserAnalyzeResponse[]>([])
 const usageData = ref<API.SpaceUsageAnalyzeResponse>({})
 
-const analyzeOptions = [
-  { label: '分析所有空间', value: 'queryAll' },
-  { label: '分析公共图库', value: 'queryPub' },
-  { label: '分析我的空间', value: 'mySpace' },
-]
-const analyzeMode = ref<string>('queryAll')
+const userStore = useLoginUserStore()
+const loginUser = userStore.loginUser
+
+const analyzeOptions = computed(() => {
+  if (loginUser?.userRole === 'admin') {
+    return [
+      { label: '分析所有空间', value: 'queryAll' },
+      { label: '分析公共图库', value: 'queryPub' },
+      { label: '分析我的空间', value: 'mySpace' },
+    ]
+  } else {
+    return [{ label: '分析我的空间', value: 'mySpace' }]
+  }
+})
+
+const analyzeMode = ref<string>('mySpace')
 
 const timeDimensionOptions = [
   { label: '按天', value: 'day' },
@@ -73,9 +84,10 @@ const fetchAnalyzeData = async () => {
     const loginUser = userStore.loginUser
     const userId = userStore.loginUser?.id
     if (!userId) return
-    // 获取当前用户空间
+    // 用 listSpaceUsingPost 查询私人空间
     const res = await listSpaceUsingPost({
       userId: loginUser.id,
+      spaceType: 0,
       current: 1,
       pageSize: 1,
     })
@@ -93,6 +105,15 @@ const fetchAnalyzeData = async () => {
       }),
       getSpaceUsageAnalyzeUsingPost({ spaceId, queryAll: false, queryPub: false }),
     ])
+    if (
+      catRes.data.code !== 0 ||
+      tagRes.data.code !== 0 ||
+      userRes.data.code !== 0 ||
+      usageRes.data.code !== 0
+    ) {
+      message.error('获取空间分析数据失败')
+      return
+    }
     categoryData.value = catRes.data.data || []
     tagData.value = tagRes.data.data || []
     userData.value = userRes.data.data || []
@@ -107,12 +128,25 @@ const fetchAnalyzeData = async () => {
       getSpaceTagAnalyzeUsingPost({ queryAll, queryPub }),
       getSpaceUserAnalyzeUsingPost({ queryAll, queryPub, timeDimension: timeDimension.value }),
     ])
+
     categoryData.value = catRes.data.data || []
     tagData.value = tagRes.data.data || []
     userData.value = userRes.data.data || []
     showUsage.value = false
   }
 }
+
+onMounted(async () => {
+  if (!loginUser?.id) {
+    await userStore.fetchLoginUser()
+  }
+  // 设置默认分析模式
+  if (loginUser?.userRole === 'admin') {
+    analyzeMode.value = 'queryAll'
+  } else {
+    analyzeMode.value = 'mySpace'
+  }
+})
 </script>
 
 <style scoped>

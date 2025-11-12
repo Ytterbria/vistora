@@ -18,6 +18,7 @@ import com.ytterbria.vistorabackend.common.exception.ThrowUtils;
 import com.ytterbria.vistorabackend.common.request.DeleteRequest;
 import com.ytterbria.vistorabackend.constant.SpaceUserPermissionConstant;
 import com.ytterbria.vistorabackend.enums.PictureReviewEnum;
+import com.ytterbria.vistorabackend.enums.SpaceTypeEnum;
 import com.ytterbria.vistorabackend.manager.CosManager;
 import com.ytterbria.vistorabackend.manager.auth.SpaceUserAuthManager;
 import com.ytterbria.vistorabackend.manager.auth.StpKit;
@@ -565,13 +566,25 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public void fillReviewParams(Picture picture, User loginUser) {
-        if (userService.isAdmin(loginUser)) {
-            picture.setReviewStatus(PictureReviewEnum.PASS.getValue());
-            picture.setReviewerId(loginUser.getId());
-            picture.setReviewTime(new Date());
+        Long spaceId = picture.getSpaceId();
+        if (spaceId == null){
+            if ( userService.isAdmin(loginUser)) {
+                picture.setReviewStatus(PictureReviewEnum.PASS.getValue());
+                picture.setReviewerId(loginUser.getId());
+                picture.setReviewTime(new Date());
+            } else {
+                picture.setReviewStatus(PictureReviewEnum.REVIEWING.getValue());
+            }
         } else {
-            picture.setReviewStatus(PictureReviewEnum.REVIEWING.getValue());
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            if (space.getSpaceType().equals(SpaceTypeEnum.PRIVATE_SPACE.getValue())){
+                picture.setReviewStatus(PictureReviewEnum.PASS.getValue());
+            }else {
+                picture.setReviewStatus(PictureReviewEnum.REVIEWING.getValue());
+            }
         }
+
     }
 }
 

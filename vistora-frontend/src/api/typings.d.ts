@@ -41,6 +41,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseListSpaceUserVO_ = {
+    code?: number
+    data?: SpaceUserVO[]
+    message?: string
+  }
+
   type BaseResponseLoginUserVO_ = {
     code?: number
     data?: LoginUserVO
@@ -107,6 +113,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseSpaceUser_ = {
+    code?: number
+    data?: SpaceUser
+    message?: string
+  }
+
   type BaseResponseSpaceVO_ = {
     code?: number
     data?: SpaceVO
@@ -149,31 +161,6 @@ declare namespace API {
   }
 
   type getPictureVOByIdUsingGETParams = {
-    /** id */
-    id?: number
-  }
-
-  type getSpaceVOByIdUsingDELETEParams = {
-    /** id */
-    id?: number
-  }
-
-  type getSpaceVOByIdUsingGETParams = {
-    /** id */
-    id?: number
-  }
-
-  type getSpaceVOByIdUsingPATCHParams = {
-    /** id */
-    id?: number
-  }
-
-  type getSpaceVOByIdUsingPOSTParams = {
-    /** id */
-    id?: number
-  }
-
-  type getSpaceVOByIdUsingPUTParams = {
     /** id */
     id?: number
   }
@@ -333,6 +320,7 @@ declare namespace API {
     id?: number
     introduction?: string
     name?: string
+    permissionList?: string[]
     picFormat?: string
     picHeight?: number
     picScale?: number
@@ -361,6 +349,7 @@ declare namespace API {
   type SpaceAddRequest = {
     spaceLevel?: number
     spaceName?: string
+    spaceType?: number
   }
 
   type SpaceCategoryAnalyzeRequest = {
@@ -390,6 +379,7 @@ declare namespace API {
     sortOrder?: string
     spaceLevel?: number
     spaceName?: string
+    spaceType?: number
     userId?: number
   }
 
@@ -427,6 +417,21 @@ declare namespace API {
     usedSize?: number
   }
 
+  type SpaceUser = {
+    createTime?: string
+    id?: number
+    spaceId?: number
+    spaceRole?: string
+    updateTime?: string
+    userId?: number
+  }
+
+  type SpaceUserAddRequest = {
+    spaceId?: number
+    spaceRole?: string
+    userId?: number
+  }
+
   type SpaceUserAnalyzeRequest = {
     queryAll?: boolean
     queryPub?: boolean
@@ -440,16 +445,41 @@ declare namespace API {
     period?: string
   }
 
+  type SpaceUserEditRequest = {
+    id?: number
+    spaceRole?: string
+  }
+
+  type SpaceUserQueryRequest = {
+    id?: number
+    spaceId?: number
+    spaceRole?: string
+    userId?: number
+  }
+
+  type SpaceUserVO = {
+    createTime?: string
+    id?: number
+    space?: SpaceVO
+    spaceId?: number
+    spaceRole?: string
+    updateTime?: string
+    user?: LoginUserVO
+    userId?: number
+  }
+
   type SpaceVO = {
     createTime?: string
     editTime?: string
     id?: number
     maxCount?: number
     maxSize?: number
+    permissionList?: string[]
     spaceCount?: number
     spaceLevel?: number
     spaceName?: string
     spaceSize?: number
+    spaceType?: number
     updateTime?: string
     user?: LoginUserVO
     userId?: number

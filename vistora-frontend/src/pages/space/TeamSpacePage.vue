@@ -5,7 +5,8 @@ import { message } from 'ant-design-vue'
 import WaterfallItem from '@/components/WaterFallItem.vue'
 import { listPictureVoByPageUsingPost } from '@/api/pictureController'
 import { useLoginUserStore } from '@/stores/userLoginUserStore'
-import { listSpaceUsingPost } from '@/api/spaceController'
+import { getSpaceVoByIdUsingPost } from '@/api/spaceController'
+import { listMyTeamSpaceUsingPost } from '@/api/spaceUserController.ts'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,16 +27,9 @@ const spaceInfo = ref<API.SpaceVO | null>(null)
 const title = ref('空间')
 
 const fetchSpaceInfo = async () => {
-  // 用 listSpaceUsingPost 查询空间详情，带上 spaceType
-  const res = await listSpaceUsingPost({
-    id: Number(spaceId.value),
-    current: 1,
-    pageSize: 1,
-  })
-  const space =
-    res?.data?.code === 0 && res.data.data?.records && res.data.data.records.length > 0
-      ? res.data.data.records[0]
-      : null
+  // 直接根据 spaceId 查询空间详情
+  const res = await getSpaceVoByIdUsingPost(Number(spaceId.value))
+  const space = res?.data?.code === 0 ? res.data.data : null
   if (space) {
     spaceInfo.value = space
   }

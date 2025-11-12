@@ -2,36 +2,6 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** addSpace GET /api/space/add */
-export async function addSpaceUsingGet(
-  body: API.SpaceAddRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseLong_>('/api/space/add', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** addSpace PUT /api/space/add */
-export async function addSpaceUsingPut(
-  body: API.SpaceAddRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseLong_>('/api/space/add', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
 /** addSpace POST /api/space/add */
 export async function addSpaceUsingPost(
   body: API.SpaceAddRequest,
@@ -39,36 +9,6 @@ export async function addSpaceUsingPost(
 ) {
   return request<API.BaseResponseLong_>('/api/space/add', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** addSpace DELETE /api/space/add */
-export async function addSpaceUsingDelete(
-  body: API.SpaceAddRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseLong_>('/api/space/add', {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** addSpace PATCH /api/space/add */
-export async function addSpaceUsingPatch(
-  body: API.SpaceAddRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseLong_>('/api/space/add', {
-    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -152,77 +92,14 @@ export async function deleteSpaceUsingPatch(
   })
 }
 
-/** getSpaceVOById GET /api/space/get/vo */
-export async function getSpaceVoByIdUsingGet(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceVOByIdUsingGETParams,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseSpaceVO_>('/api/space/get/vo', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
-
-/** getSpaceVOById PUT /api/space/get/vo */
-export async function getSpaceVoByIdUsingPut(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceVOByIdUsingPUTParams,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseSpaceVO_>('/api/space/get/vo', {
-    method: 'PUT',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
-
 /** getSpaceVOById POST /api/space/get/vo */
-export async function getSpaceVoByIdUsingPost(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceVOByIdUsingPOSTParams,
-  options?: { [key: string]: any }
-) {
+export async function getSpaceVoByIdUsingPost(body: number, options?: { [key: string]: any }) {
   return request<API.BaseResponseSpaceVO_>('/api/space/get/vo', {
     method: 'POST',
-    params: {
-      ...params,
+    headers: {
+      'Content-Type': 'application/json',
     },
-    ...(options || {}),
-  })
-}
-
-/** getSpaceVOById DELETE /api/space/get/vo */
-export async function getSpaceVoByIdUsingDelete(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceVOByIdUsingDELETEParams,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseSpaceVO_>('/api/space/get/vo', {
-    method: 'DELETE',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
-
-/** getSpaceVOById PATCH /api/space/get/vo */
-export async function getSpaceVoByIdUsingPatch(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceVOByIdUsingPATCHParams,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseSpaceVO_>('/api/space/get/vo', {
-    method: 'PATCH',
-    params: {
-      ...params,
-    },
+    data: body,
     ...(options || {}),
   })
 }
@@ -267,36 +144,6 @@ export async function listSpaceLevelUsingPatch(options?: { [key: string]: any })
   })
 }
 
-/** listSpace GET /api/space/list/page */
-export async function listSpaceUsingGet(
-  body: API.SpaceQueryRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePageSpaceVO_>('/api/space/list/page', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** listSpace PUT /api/space/list/page */
-export async function listSpaceUsingPut(
-  body: API.SpaceQueryRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePageSpaceVO_>('/api/space/list/page', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
 /** listSpace POST /api/space/list/page */
 export async function listSpaceUsingPost(
   body: API.SpaceQueryRequest,
@@ -304,36 +151,6 @@ export async function listSpaceUsingPost(
 ) {
   return request<API.BaseResponsePageSpaceVO_>('/api/space/list/page', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** listSpace DELETE /api/space/list/page */
-export async function listSpaceUsingDelete(
-  body: API.SpaceQueryRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePageSpaceVO_>('/api/space/list/page', {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  })
-}
-
-/** listSpace PATCH /api/space/list/page */
-export async function listSpaceUsingPatch(
-  body: API.SpaceQueryRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePageSpaceVO_>('/api/space/list/page', {
-    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },

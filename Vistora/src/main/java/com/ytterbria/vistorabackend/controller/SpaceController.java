@@ -44,7 +44,7 @@ public class SpaceController {
         return ResultUtils.success(result);
     }
 
-    @RequestMapping("/list/page")
+    @PostMapping("/list/page")
     @AuthCheck(mustRole = "admin")
     public BaseResponse<Page<SpaceVO>> listSpace(@RequestBody SpaceQueryRequest spaceQueryRequest){
         ThrowUtils.throwIf(ObjUtil.isEmpty(spaceQueryRequest), ErrorCode.PARAMS_ERROR);
@@ -75,18 +75,8 @@ public class SpaceController {
         return ResultUtils.success(result);
     }
 
-    @GetMapping("/get/{userId}")
-    public BaseResponse<SpaceVO> getSpaceByUserId(@PathVariable long userId) {
-        Space space = spaceService.getOne(new QueryWrapper<Space>().eq("userId", userId));
-        ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-
-        SpaceVO spaceVO = spaceService.getSpaceVO(space);
-
-        return ResultUtils.success(spaceVO);
-    }
-
-    @RequestMapping("/get/vo")
-    public BaseResponse<SpaceVO> getSpaceVOById(long id,HttpServletRequest request){
+    @PostMapping("/get/vo")
+    public BaseResponse<SpaceVO> getSpaceVOById(@RequestBody Long id,HttpServletRequest request){
         SpaceVO spaceVO = spaceService.getSpaceVOById(id, request);
 
         return ResultUtils.success(spaceVO);
